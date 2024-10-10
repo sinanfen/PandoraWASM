@@ -1,0 +1,199 @@
+﻿@using Blazored.LocalStorage
+@using Microsoft.AspNetCore.Components.Authorization
+@using Pandora.Shared.DTOs.UserDTOs
+@using PandoraWASM.CustomComponents
+@using PandoraWASM.Services
+@using System.Security.Claims
+@using PandoraWASM.Theme
+
+<MudThemeProvider @bind-IsDarkMode="@_isDarkMode" Theme="_themeManager.Theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+@inject ILocalStorageService _localStorageService
+@inject NavigationManager _navigationManager
+@inject AuthenticationStateProvider LoginAuthenticationStateProvider
+@inject IAuthService AuthService
+@inject IUserService UserService
+
+@inherits LayoutComponentBase
+
+<AuthorizeView>
+    <Authorized>
+        <MudLayout>
+            <MudAppBar Elevation="_themeManager.AppBarElevation">
+                <MudHidden Breakpoint="Breakpoint.Xs">
+                    <MudLink Href="/home/dashboard">
+                        <MudImage ObjectFit="ObjectFit.Cover" Height="65" Src="@(_isDarkMode ? "/img/modiso-wh.png" : "/img/modiso.png")" Alt="MODISO" Class="rounded-lg ml-4" />
+                    </MudLink>
+                </MudHidden>
+                <MudHidden Breakpoint="Breakpoint.Xs" Invert="true">
+                    <MudText Typo="Typo.subtitle2">PANDORA</MudText>
+                </MudHidden>
+                <MudSpacer />
+                <MudMenu Icon="@Icons.Material.Rounded.Notifications" Color="Color.Inherit">
+                    <ChildContent>
+                        <MudMenuItem>
+                            <MudIcon Icon="@Icons.Material.Outlined.NotificationsActive" />Duyuru 1
+                        </MudMenuItem>
+                        <MudMenuItem>
+                            <MudIcon Icon="@Icons.Material.Outlined.NotificationsNone" /> Duyuru 2
+                        </MudMenuItem>
+                    </ChildContent>
+                </MudMenu>
+                <MudMenu Dense="true" Class="mt-1 ml-4">
+                    <ActivatorContent>
+                        <MudAvatar>
+                            <MudImage Src="@(ImageUrl)"></MudImage>
+                        </MudAvatar>
+                        <MudText Class="mt-2 ml-2">@FirstName</MudText>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <MudPaper MinWidth="200px">
+                            <PersonCard FirstName="@FirstName"
+                                        LastName="@LastName"
+                                        ImageUrl="@ImageUrl"
+                                        JobTitle="@JobTitle"
+                                        Class="mt-n2" />
+                            <MudDivider Class="mb-2" />
+                            <MudListItem T="string" Text="Profil" Icon="@Icons.Material.Outlined.Person" Href="/personal/account" />
+                            <MudListItem T="string" Text="Çıkış Yap" Icon="@Icons.Material.Outlined.Login" OnClick="Logout" />
+                        </MudPaper>
+                    </ChildContent>
+                </MudMenu>
+                <MudSwitch ValueChanged="DarkModeToggle"
+                           Value="_isDarkMode"
+                           Color="@(_isDarkMode ? Color.Tertiary : Color.Primary)"
+                           Class="ml-3"
+                           T="bool"
+                           Size="Size.Large"
+                           ThumbIcon="@(_isDarkMode ? Icons.Material.Filled.DarkMode : Icons.Material.Filled.LightMode)"
+                           ThumbIconColor="@(_isDarkMode ? Color.Info : Color.Warning)" />
+            </MudAppBar>
+            <MudDrawer @bind-Open="_drawerOpen" Elevation="_themeManager.DrawerElevation" ClipMode="_themeManager.DrawerClipMode">
+                <NavMenu FirstName="@FirstName"
+                         LastName="@LastName"
+                         ImageUrl="@ImageUrl"
+                         JobTitle="@JobTitle" />
+            </MudDrawer>
+            <MudMainContent>
+                <MudHidden Breakpoint="Breakpoint.None">
+                    <MudToolBar Gutters="false">
+                        <MudIconButton Icon="@Icons.Material.Outlined.Menu" Color="Color.Inherit" OnClick="@((e) => DrawerToggle())" Class="ml-3" />
+                        <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
+                        <MudSpacer />
+                    </MudToolBar>
+                </MudHidden>
+                <MudContainer MaxWidth="MaxWidth.False" Class="mt-4">
+                    @Body
+                </MudContainer>
+            </MudMainContent>
+            <MudThemeManagerButton OnClick="@((e) => OpenThemeManager(true))" />
+            <MudThemeManager Open="_themeManagerOpen" OpenChanged="OpenThemeManager" Theme="_themeManager" ThemeChanged="UpdateTheme" />
+        </MudLayout>
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+
+
+
+@code {
+    private ThemeManagerTheme _themeManager = new ThemeManagerTheme
+        {
+            Theme = new PandoraAdminDashboard(),
+            DrawerClipMode = DrawerClipMode.Always,
+            FontFamily = "Montserrat",
+            DefaultBorderRadius = 5,
+            AppBarElevation = 2,
+            DrawerElevation = 5,
+            DefaultElevation = 5
+        };
+
+    public bool _drawerOpen = true;
+    public bool _themeManagerOpen = false;
+    private bool _isDarkMode = false;
+    private MudTheme _theme = new();
+
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public string JobTitle { get; set; }
+    public string ImageUrl { get; set; }
+
+    private ClaimsPrincipal user;
+    private Guid userId;
+    private UserDto loggedInUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isDarkMode = await _localStorageService.GetItemAsync<bool>("isDarkMode", default);
+        var authState = await LoginAuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (Guid.TryParse(userIdClaim, out var parsedUserId))
+            {
+                userId = parsedUserId;
+            }
+            else
+            {
+                Console.WriteLine("User ID is not valid or not present in the claims.");
+            }
+        }
+
+        if (loggedInUser != null)
+        {
+            FirstName = loggedInUser.FirstName;
+            LastName = loggedInUser.LastName;
+            JobTitle = "loggedInUser.Job";
+            ImageUrl = "/img/admin.jpg";
+        }
+    }
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    void OpenThemeManager(bool value)
+    {
+        _themeManagerOpen = value;
+    }
+
+    private async Task DarkModeToggle()
+    {
+        _isDarkMode = !_isDarkMode;
+        await _localStorageService.SetItemAsync<bool>("isDarkMode", _isDarkMode, default);
+    }
+
+    void UpdateTheme(ThemeManagerTheme value)
+    {
+        _themeManager = value;
+        StateHasChanged();
+    }
+
+    protected override void OnInitialized()
+    {
+        StateHasChanged();
+    }
+
+    private List<BreadcrumbItem> _items = new List<BreadcrumbItem>
+    {
+        new BreadcrumbItem("Home", href: "/"),
+        new BreadcrumbItem("Dashboard", href: ""),
+    };
+
+    private async Task Logout()
+    {
+        await AuthService.LogoutAsync();
+        var customAuthProvider = (CustomAuthenticationStateProvider)LoginAuthenticationStateProvider;
+        await customAuthProvider.NotifyUserLogout();
+        _navigationManager.NavigateTo("/auth/login", true);
+    }
+
+}

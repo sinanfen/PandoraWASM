@@ -1,0 +1,16 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager Navigation
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateTask;
+
+        if (authenticationState?.User?.Identity == null || !authenticationState.User.Identity.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/auth/login", true);
+        }
+    }
+}

@@ -1,0 +1,141 @@
+﻿@* @page "/pages/authentication/reset-password"
+
+@using System.Text.RegularExpressions
+@layout LoginLayout
+@inject AuthenticationService AuthenticationService
+@inject NavigationManager Navigation
+
+<MudText Typo="Typo.h4" GutterBottom="true">Yeni şifre belirleyin</MudText>
+
+<MudText Typo="Typo.subtitle2">Sıfırlamak için aşağıya yeni şifrenizi girin.</MudText>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mt-4 mud-width-full" Style="max-width:500px;">
+        @errorMessage
+    </MudAlert>
+}
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <MudAlert Severity="Severity.Success" Class="mt-4 mud-width-full" Style="max-width:500px;">
+        @successMessage
+    </MudAlert>
+}
+
+<MudItem xs="12" md="12">
+    <MudTextField @bind-Value="@Password"
+                  Label="Yeni Şifre"
+                  Required
+                  RequiredError="Yeni şifre gereklidir!"
+                  Variant="Variant.Outlined"
+                  InputType="@PasswordInput"
+                  Validation="@(new Func<string, IEnumerable<string>>(PasswordStrength))"
+                  Adornment="Adornment.End"
+                  AdornmentIcon="@PasswordInputIcon"
+                  OnAdornmentClick="TogglePasswordVisibility" />
+</MudItem>
+
+<MudButton Variant="Variant.Filled"
+           Color="Color.Primary"
+           Size="Size.Large"
+           FullWidth="true"
+           Class="mt-2"
+           OnClick="ResetPassword"
+           Disabled="@(!IsPasswordValid)">
+    Yeni Şifre Ayarla
+</MudButton>
+
+@code {
+    [Inject] ISnackbar Snackbar { get; set; }
+
+    [Parameter] public string Token { get; set; }
+    [Parameter] public string Email { get; set; }
+    private bool IsPasswordValid { get; set; } = false;
+
+    string Password { get; set; }
+    string successMessage;
+    string errorMessage;
+
+    bool PasswordVisibility;
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    void TogglePasswordVisibility()
+    {
+        if (PasswordVisibility)
+        {
+            PasswordVisibility = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else
+        {
+            PasswordVisibility = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+
+    private IEnumerable<string> PasswordStrength(string password)
+    {
+        var errors = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            errors.Add("Password is required!");
+        }
+        else
+        {
+            if (password.Length < 8)
+                errors.Add("Password must be at least of length 8");
+            if (!Regex.IsMatch(password, @"[A-Z]"))
+                errors.Add("Password must contain at least one capital letter");
+            if (!Regex.IsMatch(password, @"[a-z]"))
+                errors.Add("Password must contain at least one lowercase letter");
+            if (!Regex.IsMatch(password, @"[0-9]"))
+                errors.Add("Password must contain at least one digit");
+        }
+
+        IsPasswordValid = !errors.Any();
+        return errors;
+    }
+
+    protected override void OnInitialized()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("token", out var tokenValue) &&
+            Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("email", out var emailValue))
+        {
+            Token = tokenValue;
+            Email = emailValue;
+        }
+        else
+        {
+            errorMessage = "Invalid or missing reset token.";
+        }
+    }
+
+    private async Task ResetPassword()
+    {
+        try
+        {
+            var passwordErrors = PasswordStrength(Password).ToList();
+            if (passwordErrors.Any())
+            {
+                foreach (var error in passwordErrors)
+                    Snackbar.Add(error, Severity.Error);
+                return;
+            }
+            await AuthenticationService.ResetPasswordAsync(Email, Token, Password);
+            Snackbar.Add("Şifreniz başarıyla sıfırlanmıştır.", Severity.Success);
+            Navigation.NavigateTo("/auth/login");
+            errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            successMessage = null;
+        }
+    }
+}
+ *@

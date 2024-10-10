@@ -1,0 +1,106 @@
+﻿@* @page "/pages/authentication/forgot-password"
+@using Microsoft.AspNetCore.Components.Authorization
+@using PandoraWASM.Services
+@using PandoraWASM.Shared
+@layout LoginLayout
+
+@inject IAuthService AuthService
+
+
+<MudText Typo="Typo.h4" GutterBottom="true">Şifrenizi Mi Unuttunuz?</MudText>
+
+<MudText Typo="Typo.subtitle2">Hesabınıza bağlı e-posta adresini girin; şifrenizi sıfırlamak için bir bağlantı içeren bir e-posta alacaksınız.</MudText>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mt-4 mud-width-full" Style="max-width:500px;">
+        @errorMessage
+    </MudAlert>
+}
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <MudAlert Severity="Severity.Success" Class="mt-4 mud-width-full" Style="max-width:500px;">
+        @successMessage
+    </MudAlert>
+}
+
+<MudForm @ref="form">
+    <MudTextField T="string" Label="E-mail" Variant="Variant.Outlined" Class="my-4" @bind-Value="email"
+                  Required="true" RequiredError="E-mail is required."
+                  Validation="@(new Func<string, string>(ValidateEmail))" />
+
+    <MudGrid>
+        <MudItem xs="10">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true"
+                       Class="mt-3" OnClick="SendResetEmail">
+                ŞİFREYİ SIFIRLA
+            </MudButton>
+        </MudItem>
+        <MudItem xs="2">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Info"
+                           Size="Size.Medium" OnClick="GoToLogin" Class="mt-3"
+                           aria-label="Go back to login" />
+        </MudItem>
+    </MudGrid>
+</MudForm>
+
+
+@code {
+    [Inject] AuthenticationStateProvider LoginAuthenticationStateProvider { get; set; }
+    [Inject] NavigationManager NavigationManager { get; set; }
+    [Inject] IAuthService AuthService { get; set; }
+
+    private MudForm form;
+    private string email;
+    private string errorMessage;
+    private string successMessage;
+
+    // Regex ile e-posta doğrulama
+    private string ValidateEmail(string email)
+    {
+        if (string.IsNullOrEmpty(email))
+        {
+            return "E-mail is required.";
+        }
+
+        // Regex kullanarak e-posta doğrulama
+        var regex = new System.Text.RegularExpressions.Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+        if (!regex.IsMatch(email))
+        {
+            return "Invalid e-mail address.";
+        }
+
+        return null; // Eğer hata yoksa null dönüyoruz
+    }
+
+    private async Task SendResetEmail()
+    {
+        await form.Validate();
+
+        if (form.IsValid)
+        {
+            try
+            {
+                await AuthService.ForgotPasswordAsync(email);
+                successMessage = "A reset link has been sent to your email.";
+                errorMessage = null;
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Failed to send reset email: {ex.Message}";
+                successMessage = null;
+            }
+        }
+        else
+        {
+            errorMessage = "Please enter a valid email address.";
+        }
+    }
+
+    private void GoToLogin()
+    {
+        NavigationManager.NavigateTo("/auth/login");
+    }
+}
+ *@
