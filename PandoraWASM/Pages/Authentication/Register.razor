@@ -12,65 +12,88 @@
 <MudText>Already have an account? <MudLink Href="/auth/login">Sign In</MudLink></MudText>
 
 <MudTextField T="string" @bind-Value="registerModel.Username" Label="Username" Variant="Variant.Outlined" Class="my-4" />
-
 <MudTextField T="string" @bind-Value="registerModel.Email" Label="E-mail" Variant="Variant.Outlined" />
-
 <MudTextField T="string" @bind-Value="registerModel.Password" Label="Password" Variant="Variant.Outlined" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="TogglePasswordVisibility" Class="mt-4" />
-
 <MudTextField T="string" @bind-Value="registerModel.ConfirmPassword" Label="Confirm Password" Variant="Variant.Outlined" InputType="InputType.Password" Class="mt-4" />
-
 <MudTextField T="string" @bind-Value="registerModel.PhoneNumber" Label="Phone Number" Variant="Variant.Outlined" Class="mt-4" />
 
-<MudTextField T="string" @bind-Value="registerModel.FirstName" Label="First Name" Variant="Variant.Outlined" Class="mt-4" />
+@if (registerModel is IndividualUserRegisterDto individualModel)
+{
+    <MudTextField T="string" @bind-Value="individualModel.FirstName" Label="First Name" Variant="Variant.Outlined" Class="mt-4" />
+    <MudTextField T="string" @bind-Value="individualModel.LastName" Label="Last Name" Variant="Variant.Outlined" Class="mt-4" />
+}
+else if (registerModel is CorporateUserRegisterDto corporateModel)
+{
+    <MudTextField T="string" @bind-Value="corporateModel.CompanyName" Label="Company Name" Variant="Variant.Outlined" Class="mt-4" />
+    <MudTextField T="string" @bind-Value="corporateModel.TaxNumber" Label="Tax Number" Variant="Variant.Outlined" Class="mt-4" />
+}
 
-<MudTextField T="string" @bind-Value="registerModel.LastName" Label="Last Name" Variant="Variant.Outlined" Class="mt-4" />
-
-<MudTextField T="string" @bind-Value="registerModel.CompanyName" Label="Company Name" Variant="Variant.Outlined" Class="mt-4" />
-
-<MudTextField T="string" @bind-Value="registerModel.TaxNumber" Label="Tax Number" Variant="Variant.Outlined" Class="mt-4" />
-
-<MudSelect T="UserType" @bind-Value="registerModel.UserType" Label="User Type" Variant="Variant.Outlined" Class="mt-4">
+<MudSelect T="UserType" @bind-Value="userType" Label="User Type" Variant="Variant.Outlined" Class="mt-4" OnChange="OnUserTypeChanged">
     <MudSelectItem Value="UserType.Individual">Individual</MudSelectItem>
     <MudSelectItem Value="UserType.Corporate">Company</MudSelectItem>
 </MudSelect>
 
 <MudCheckBox T="bool" @bind-Checked="AgreeToTerms" Label="I agree to the terms and privacy" Color="Color.Primary" Class="ml-n1 my-3" />
-
 <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!AgreeToTerms)" Size="Size.Large" FullWidth="true" OnClick="RegisterAsync">Register</MudButton>
 
 @code {
-    private UserRegisterDto registerModel = new UserRegisterDto();
+    private UserRegisterDto registerModel; // Can be CorporateUserRegisterDto or IndividualUserRegisterDto
+    private UserType userType = UserType.Individual; // Default to Individual
     private bool AgreeToTerms { get; set; }
     private bool PasswordVisibility;
     private InputType PasswordInput = InputType.Password;
     private string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
 
+    protected override void OnInitialized()
+    {
+        OnUserTypeChanged(userType); // Initialize with default type
+    }
+
+    private void OnUserTypeChanged(UserType selectedUserType)
+    {
+        userType = selectedUserType;
+        if (userType == UserType.Individual)
+        {
+            registerModel = new IndividualUserRegisterDto();
+        }
+        else if (userType == UserType.Corporate)
+        {
+            registerModel = new CorporateUserRegisterDto();
+        }
+    }
+
     private async Task RegisterAsync()
     {
-        if (await AuthService.RegisterAsync(registerModel))
+        if (registerModel is IndividualUserRegisterDto individualModel)
         {
-            Snackbar.Add("Registration successful! Redirecting to login...", Severity.Success);
-            Navigation.NavigateTo("/auth/login");
+            if (await AuthService.RegisterAsync(individualModel))
+            {
+                Snackbar.Add("Registration successful! Redirecting to login...", Severity.Success);
+                Navigation.NavigateTo("/auth/login");
+            }
+            else
+            {
+                Snackbar.Add("Registration failed. Please check your details and try again.", Severity.Error);
+            }
         }
-        else
+        else if (registerModel is CorporateUserRegisterDto corporateModel)
         {
-            Snackbar.Add("Registration failed. Please check your details and try again.", Severity.Error);
+            if (await AuthService.RegisterAsync(corporateModel))
+            {
+                Snackbar.Add("Registration successful! Redirecting to login...", Severity.Success);
+                Navigation.NavigateTo("/auth/login");
+            }
+            else
+            {
+                Snackbar.Add("Registration failed. Please check your details and try again.", Severity.Error);
+            }
         }
     }
 
     private void TogglePasswordVisibility()
     {
-        if (PasswordVisibility)
-        {
-            PasswordVisibility = false;
-            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
-            PasswordInput = InputType.Password;
-        }
-        else
-        {
-            PasswordVisibility = true;
-            PasswordInputIcon = Icons.Material.Filled.Visibility;
-            PasswordInput = InputType.Text;
-        }
+        PasswordVisibility = !PasswordVisibility;
+        PasswordInputIcon = PasswordVisibility ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff;
+        PasswordInput = PasswordVisibility ? InputType.Text : InputType.Password;
     }
 }
