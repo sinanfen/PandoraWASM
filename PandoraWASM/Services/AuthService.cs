@@ -41,10 +41,19 @@ public class AuthService : IAuthService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<bool> ChangePasswordAsync(UserPasswordChangeDto changePasswordDto)
+    public async Task<string> ChangePasswordAsync(UserPasswordChangeDto changePasswordDto)
     {
         var response = await _httpClient.PostAsJsonAsync("auth/change-password", changePasswordDto);
-        return response.IsSuccessStatusCode;
+        if (response.IsSuccessStatusCode)
+        {
+            var successMessage = await response.Content.ReadAsStringAsync();
+            return successMessage;
+        }
+        else
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            return errorMessage;
+        }
     }
 
     public async Task LogoutAsync()
