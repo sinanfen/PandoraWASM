@@ -2,8 +2,8 @@
 <MudCard Elevation="0" Square="true" Class="@Class" Style="@Style">
     <MudCardHeader>
         <CardHeaderAvatar>
-            <MudAvatar>
-                <MudImage Src="@ImageUrl"></MudImage>
+            <MudAvatar Style="border-radius:50%;">
+                <MudImage Src="@ImageUrl" Alt="User Avatar" Style="object-fit: cover; width: 100%; height: 100%; border-radius: 50%;" />
             </MudAvatar>
         </CardHeaderAvatar>
         <CardHeaderContent>
@@ -22,5 +22,5 @@
     [Parameter] public string JobTitle { get; set; }
     [Parameter] public string ImageUrl { get; set; }
 
-   
+
 }

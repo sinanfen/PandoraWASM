@@ -25,7 +25,9 @@
             <MudAppBar Elevation="_themeManager.AppBarElevation">
                 <MudHidden Breakpoint="Breakpoint.Xs">
                     <MudLink Href="/home/dashboard">
-                        <MudImage ObjectFit="ObjectFit.Cover" Height="65" Src="@(_isDarkMode ? "/img/modiso-wh.png" : "/img/modiso.png")" Alt="MODISO" Class="rounded-lg ml-4" />
+                        <MudImage ObjectFit="ObjectFit.Cover"
+                                  Height="55" Src="@(_isDarkMode ? "/img/pandora-vector.png" : "/img/pandora-vector.png")"
+                                  Alt="PANDORA" Class="rounded-lg ml-4" />
                     </MudLink>
                 </MudHidden>
                 <MudHidden Breakpoint="Breakpoint.Xs" Invert="true">
@@ -90,15 +92,17 @@
                 </MudContainer>
             </MudMainContent>
             <MudThemeManagerButton OnClick="@((e) => OpenThemeManager(true))" />
-            <MudThemeManager Open="_themeManagerOpen" OpenChanged="OpenThemeManager" Theme="_themeManager" ThemeChanged="UpdateTheme" />
+            <MudThemeManager Open="_themeManagerOpen"
+                             OpenChanged="OpenThemeManager"
+                             Theme="_themeManager"
+                             ColorPickerView="ColorPickerView.Palette"
+                             ThemeChanged="UpdateTheme" />
         </MudLayout>
     </Authorized>
     <NotAuthorized>
         <RedirectToLogin />
     </NotAuthorized>
 </AuthorizeView>
-
-
 
 @code {
     private ThemeManagerTheme _themeManager = new ThemeManagerTheme
@@ -134,24 +138,26 @@
 
         if (user.Identity != null && user.Identity.IsAuthenticated)
         {
-            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim = user.FindFirst("nameid")?.Value; // Use "nameid" as the claim type
 
-            if (Guid.TryParse(userIdClaim, out var parsedUserId))
+            if (!string.IsNullOrEmpty(userIdClaim))
             {
-                userId = parsedUserId;
+                Console.WriteLine("User ID: " + userIdClaim);
+                userId = Guid.Parse(userIdClaim);
+                loggedInUser = await UserService.GetUserAsync(userId);
             }
             else
-            {
-                Console.WriteLine("User ID is not valid or not present in the claims.");
-            }
+                Console.WriteLine("User ID claim not found.");
         }
+        else
+            Console.WriteLine("User is not authenticated.");
 
         if (loggedInUser != null)
         {
             FirstName = loggedInUser.FirstName;
             LastName = loggedInUser.LastName;
-            JobTitle = "loggedInUser.Job";
-            ImageUrl = "/img/admin.jpg";
+            JobTitle = loggedInUser.Username;
+            ImageUrl = "/img/pandora-myth.png";
         }
     }
 
