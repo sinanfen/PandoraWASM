@@ -1,0 +1,485 @@
+﻿@page "/personal/account"
+
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Authorization
+@using Pandora.Shared.DTOs.UserDTOs
+@using System.Security.Claims
+@using Pandora.Shared.Enums
+@using PandoraWASM.Services
+
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider LoginAuthenticationStateProvider
+@inject IAuthService AuthService
+@inject IUserService UserService
+
+<MudText Typo="Typo.h5" Color="Color.Primary" Class="mb-4">Account</MudText>
+
+@if (loggedInUser is null)
+{
+    <MudProgressLinear Color="MudBlazor.Color.Info" Indeterminate="true" Class="my-7" />
+}
+else
+{
+    <MudTabs Elevation="1" Rounded="true" PanelClass="mt-6">
+        <MudTabPanel Text="Genel">
+            <MudGrid>
+                <MudItem xs="12" sm="4" md="3">
+                    <MudCard>
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText>Profilim</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <div class="d-flex justify-center mb-4">
+                                <MudAvatar Style="height:100px; width:100px; border-radius:50%;">
+                                    <MudImage Src="@AvatarIcon" Alt="User Avatar" Style="object-fit: cover; width: 100%; height: 100%; border-radius: 50%;" />
+                                </MudAvatar>
+
+                            </div>
+                            <MudText Style="font-weight:bold;" Color="Color.Info" Align="Align.Center">@loggedInUser.FirstName @loggedInUser.LastName</MudText>
+                            <MudText Color="Color.Dark" Align="Align.Center">@loggedInUser.Username</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" sm="8" md="9">
+                    <MudCard Class="mb-2">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText>Profil Detayları</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudGrid>
+                                @if (isIndividual)
+                                {
+                                    <MudItem xs="12" md="12">
+                                        <MudTextField @bind-Value="individualUserUpdateDto.Username" Label="Username" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField @bind-Value="individualUserUpdateDto.FirstName" Label="First Name" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField @bind-Value="individualUserUpdateDto.LastName" Label="Last Name" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField @bind-Value="individualUserUpdateDto.Email" Label="E-mail" Variant="Variant.Outlined" InputType="InputType.Email" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField @bind-Value="individualUserUpdateDto.PhoneNumber" Label="Phone Number" Variant="Variant.Outlined" InputType="InputType.Telephone" />
+                                    </MudItem>
+                                }
+                                else
+                                {
+                                    <MudItem xs="12" md="12">
+                                        <MudTextField @bind-Value="corporateUserUpdateDto.Username" Label="Username" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField @bind-Value="corporateUserUpdateDto.CompanyName" Label="Company Name" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField @bind-Value="corporateUserUpdateDto.TaxNumber" Label="Tax Number" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField @bind-Value="corporateUserUpdateDto.Email" Label="E-mail" Variant="Variant.Outlined" InputType="InputType.Email" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField @bind-Value="corporateUserUpdateDto.PhoneNumber" Label="Phone Number" Variant="Variant.Outlined" InputType="InputType.Telephone" />
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        </MudCardContent>
+                        <MudCardActions Class="pb-4 pl-4">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" @onclick="@(()=>SaveChangesUserInformation())">Save Changes</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </MudTabPanel>
+        <MudTabPanel Text="PASSWORD">
+            <MudForm @ref="form">
+                <MudGrid Justify="Justify.Center">
+                    <MudItem xs="12" md="8">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h5">Change Password</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudGrid Justify="Justify.Center">
+                                    <!-- Mevcut Şifre -->
+                                    <MudItem xs="12" md="8">
+                                        <MudTextField @bind-Value="changePasswordModel.CurrentPassword"
+                                                      Label="Current Password"
+                                                      Variant="Variant.Outlined"
+                                                      InputType="@CurrentPasswordInput"
+                                                      Adornment="Adornment.End"
+                                                      AdornmentIcon="@CurrentPasswordInputIcon"
+                                                      OnAdornmentClick="TogglePasswordVisibility" />
+                                    </MudItem>
+                                    <!-- Yeni Şifre -->
+                                    <MudItem xs="12" md="8">
+                                        <MudTextField T="string" Label="New Password"
+                                                      Variant="Variant.Outlined"
+                                                      InputType="@NewPasswordInput"
+                                                      @bind-Value="changePasswordModel.NewPassword"
+                                                      @ref="pwField1"
+                                                      Validation="@(new Func<string, IEnumerable<string>>(PasswordStrength))"
+                                                      Required="true"
+                                                      RequiredError="Yeni şifre gereklidir!"
+                                                      Adornment="Adornment.End"
+                                                      AdornmentIcon="@NewPasswordInputIcon"
+                                                      OnAdornmentClick="ToggleNewPasswordVisibility" />
+                                    </MudItem>
+                                    <!-- Yeni Şifre Tekrarı -->
+                                    <MudItem xs="12" md="8">
+                                        <MudTextField T="string"
+                                                      Label="Confirm New Password"
+                                                      Variant="Variant.Outlined"
+                                                      InputType="InputType.Password"
+                                                      @bind-Value="changePasswordModel.ConfirmNewPassword"
+                                                      Validation="@(new Func<string, string>(PasswordMatch))"
+                                                      Adornment="Adornment.Start"
+                                                      AdornmentIcon="@Icons.Material.Filled.Lock" />
+                                    </MudItem>
+                                </MudGrid>
+                            </MudCardContent>
+                            <MudCardActions Class="pb-4 pl-4">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" Disabled="isPasswordsMatched==null" @onclick="@(() => ChangePasswordAsync())">
+                                    CHANGE PASSWORD
+                                </MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            </MudForm>
+        </MudTabPanel>
+    </MudTabs>
+}
+
+@code {
+    public string AvatarIcon { get; set; } = "/img/pandora-myth.png";
+    public string AvatarButtonText { get; set; } = "Delete Picture";
+    public Color AvatarButtonColor { get; set; } = Color.Error;
+
+    public bool FriendSwitch { get; set; } = true;
+    public bool NotificationEmail_1 { get; set; } = true;
+    public bool NotificationEmail_2 { get; set; }
+    public bool NotificationEmail_3 { get; set; }
+    public bool NotificationEmail_4 { get; set; } = true;
+    public bool NotificationChat_1 { get; set; }
+    public bool NotificationChat_2 { get; set; } = true;
+    public bool NotificationChat_3 { get; set; } = true;
+    public bool NotificationChat_4 { get; set; }
+
+    private UserDto userDto;
+    private ClaimsPrincipal user;
+    private Guid userId;
+    private UserDto loggedInUser;
+    private IndividualUserUpdateDto individualUserUpdateDto;
+    private CorporateUserUpdateDto corporateUserUpdateDto;
+
+    private string statusMessage;
+    private string currentImagePath;
+
+    bool isIndividual = false;
+
+    bool CurrentPasswordVisibility;
+    InputType CurrentPasswordInput = InputType.Password;
+    string CurrentPasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    bool NewPasswordVisibility;
+    InputType NewPasswordInput = InputType.Password;
+    string NewPasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    void TogglePasswordVisibility()
+    {
+        @if (CurrentPasswordVisibility)
+        {
+            CurrentPasswordVisibility = false;
+            CurrentPasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            CurrentPasswordInput = InputType.Password;
+        }
+        else
+        {
+            CurrentPasswordVisibility = true;
+            CurrentPasswordInputIcon = Icons.Material.Filled.Visibility;
+            CurrentPasswordInput = InputType.Text;
+        }
+    }
+
+    void ToggleNewPasswordVisibility()
+    {
+        @if (NewPasswordVisibility)
+        {
+            NewPasswordVisibility = false;
+            NewPasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            NewPasswordInput = InputType.Password;
+        }
+        else
+        {
+            NewPasswordVisibility = true;
+            NewPasswordInputIcon = Icons.Material.Filled.Visibility;
+            NewPasswordInput = InputType.Text;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await LoginAuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            var userIdClaim = user.FindFirst("nameid")?.Value; // Use "nameid" as the claim type
+
+            if (!string.IsNullOrEmpty(userIdClaim))
+            {
+                Console.WriteLine("User ID: " + userIdClaim);
+                userId = Guid.Parse(userIdClaim);
+                loggedInUser = await UserService.GetUserAsync(userId);
+
+                if (loggedInUser != null)
+                {
+                    isIndividual = loggedInUser.UserType == Pandora.Shared.Enums.UserType.Individual;
+                    if (isIndividual)
+                        individualUserUpdateDto = ConvertToIndividualUserUpdateDto(loggedInUser);
+                    else
+                        corporateUserUpdateDto = ConvertToCorporateUserUpdateDto(loggedInUser);
+                }
+            }
+            else
+            {
+                Console.WriteLine("User ID claim not found.");
+            }
+        }
+        else
+        {
+            Console.WriteLine("User is not authenticated.");
+        }
+    }
+
+
+    private void SaveChanges(string text, Severity severity)
+    {
+        Snackbar.Add(text, severity);
+    }
+
+    private UserPasswordChangeDto changePasswordModel = new UserPasswordChangeDto();
+    private MudTextField<string> pwField1;
+    MudForm form;
+
+    private IEnumerable<string> PasswordStrength(string password)
+    {
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            isPasswordsMatched = null;
+            yield return "Password is required!";
+            yield break;
+        }
+        if (password.Length < 8)
+        {
+            isPasswordsMatched = null;
+            yield return "Password must be at least of length 8";
+        }
+        if (!Regex.IsMatch(password, @"[A-Z]"))
+        {
+            isPasswordsMatched = null;
+            yield return "Password must contain at least one capital letter";
+        }
+        if (!Regex.IsMatch(password, @"[a-z]"))
+        {
+            isPasswordsMatched = null;
+            yield return "Password must contain at least one lowercase letter";
+        }
+        if (!Regex.IsMatch(password, @"[0-9]"))
+        {
+            isPasswordsMatched = null;
+            yield return "Password must contain at least one digit";
+        }
+    }
+
+    private bool ValidatePassword(string password, out List<string> errors)
+    {
+        errors = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            errors.Add("Password is required!");
+            return false;
+        }
+
+        if (password.Length < 8)
+            errors.Add("Password must be at least of length 8");
+
+        if (!Regex.IsMatch(password, @"[A-Z]"))
+            errors.Add("Password must contain at least one capital letter");
+
+        if (!Regex.IsMatch(password, @"[a-z]"))
+            errors.Add("Password must contain at least one lowercase letter");
+
+        if (!Regex.IsMatch(password, @"[0-9]"))
+            errors.Add("Password must contain at least one digit");
+
+        if (!Regex.IsMatch(password, @"[\W_]"))  // Özel karakter kontrolü için
+            errors.Add("Password must contain at least one special character");
+
+        return errors.Count == 0;
+    }
+
+    string isPasswordsMatched;
+    private string PasswordMatch(string confirmPassword)
+    {
+
+        if (string.IsNullOrEmpty(changePasswordModel.CurrentPassword))
+        {
+            Snackbar.Add("Mevcut şifrenizi giriniz.", Severity.Error);
+            isPasswordsMatched = null;
+            return null;
+        }
+        if (string.IsNullOrEmpty(changePasswordModel.NewPassword) || string.IsNullOrEmpty(changePasswordModel.ConfirmNewPassword))
+        {
+            Snackbar.Add("Zorunlu alanları doldurunuz.", Severity.Error);
+            isPasswordsMatched = null;
+            return null;
+        }
+        if (confirmPassword != changePasswordModel.NewPassword)
+        {
+            isPasswordsMatched = null;
+            return "Passwords do not match";
+        }
+        isPasswordsMatched = "";
+        return null;
+    }
+
+    private async Task ChangePasswordAsync()
+    {
+        try
+        {
+            if (changePasswordModel.NewPassword != changePasswordModel.ConfirmNewPassword)
+            {
+                Snackbar.Add("The passwords do not match.", Severity.Error);
+                return;
+            }
+
+            if (!ValidatePassword(changePasswordModel.NewPassword, out List<string> passwordErrors))
+            {
+                foreach (var error in passwordErrors)
+                    Snackbar.Add(error, Severity.Error);
+                return;
+            }
+
+            if (loggedInUser == null)
+                return;
+
+            var resultMessage = await AuthService.ChangePasswordAsync(changePasswordModel);
+
+            if (resultMessage != null && resultMessage.Contains("successful"))
+            {
+                await AuthService.LogoutAsync();
+                Snackbar.Add("Your password has been successfully updated.", Severity.Success);
+                NavigationManager.NavigateTo("/auth/login");
+            }
+            else
+            {
+                Snackbar.Add(resultMessage, Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            Snackbar.Add("An unexpected error occurred. Please try again.", Severity.Error);
+        }
+    }
+
+    private async Task SaveChangesUserInformation()
+    {
+        try
+        {
+            if (isIndividual)
+            {
+                if (individualUserUpdateDto == null)
+                {
+                    Snackbar.Add("Individual user data is missing.", Severity.Error);
+                    return;
+                }
+                var result = await UserService.UpdateIndividualUserAsync(individualUserUpdateDto);
+                HandleUpdateResult(result);
+            }
+            else
+            {
+                if (corporateUserUpdateDto == null)
+                {
+                    Snackbar.Add("Corporate user data is missing.", Severity.Error);
+                    return;
+                }
+                var result = await UserService.UpdateCorporateUserAsync(corporateUserUpdateDto);
+                HandleUpdateResult(result);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Server error has occurred: {ex.Message}", Severity.Error);
+            throw;
+        }
+    }
+
+    private void HandleUpdateResult((bool Success, string ErrorMessage) result)
+    {
+        if (result.Success)
+        {
+            Snackbar.Add("Profile details have been updated successfully.", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add($"Profile details could not be updated: {result.ErrorMessage}", Severity.Error);
+        }
+    }
+
+
+    private void ReloadPage()
+    {
+        var currentUri = NavigationManager.Uri;
+        NavigationManager.NavigateTo(currentUri, forceLoad: true);
+    }
+
+    private IndividualUserUpdateDto ConvertToIndividualUserUpdateDto(UserDto userDto)
+    {
+        if (userDto.UserType == UserType.Individual)
+        {
+            return new IndividualUserUpdateDto
+                {
+                    Id = userDto.Id,
+                    FirstName = userDto.FirstName,
+                    LastName = userDto.LastName,
+                    Username = userDto.Username,
+                    Email = userDto.Email,
+                    PhoneNumber = userDto.PhoneNumber,
+                    LastLoginDate = userDto.LastLoginDate,
+                };
+        }
+        throw new InvalidOperationException("Invalid user type.");
+    }
+
+    private CorporateUserUpdateDto ConvertToCorporateUserUpdateDto(UserDto userDto)
+    {
+        if (userDto.UserType == UserType.Corporate)
+        {
+            return new CorporateUserUpdateDto
+                {
+                    Id = userDto.Id,
+                    Username = userDto.Username,
+                    Email = userDto.Email,
+                    PhoneNumber = userDto.PhoneNumber,
+                    CompanyName = userDto.CompanyName,
+                    TaxNumber = userDto.TaxNumber,
+                    LastLoginDate = userDto.LastLoginDate,
+                };
+        }
+        throw new InvalidOperationException("Invalid user type.");
+    }
+
+} 
