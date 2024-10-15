@@ -15,73 +15,48 @@
             Style="background-color: var(--mud-palette-drawer-background);color: var(--mud-palette-drawer-text);" />
 <MudDivider DividerType="DividerType.Middle" Class="mb-0" />
 <MudNavMenu>
-    <MudNavLink Href="/home/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.Dashboard" IconColor="Color.Info">
+    <MudNavLink Href="/home/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.Home" IconColor="Color.Info">
         Dashboard
     </MudNavLink>
-    <AuthorizeView Policy="">
-        <Authorized>
-            <MudNavGroup Title="Customer Relationship Management" Icon="@Icons.Material.Filled.ManageAccounts" IconColor="Color.Primary" Expanded="false">
-                <MudNavGroup Title="Accounts">
-                    <MudNavLink Href="/crm/cards" Icon="@Icons.Material.Filled.AccountCircle" IconColor="Color.Info">
-                        Accounts
-                    </MudNavLink>
-                    <MudNavLink Href="/crm/users" Icon="@Icons.Material.Filled.Person" IconColor="Color.Info">
-                        Persons
-                    </MudNavLink>
-                    <MudNavLink Href="/crm/contract-and-projects" Icon="@Icons.Material.Filled.Assignment" IconColor="Color.Info">
-                        Contracts and Projects
-                    </MudNavLink>
-                </MudNavGroup>
-            </MudNavGroup>
-        </Authorized>
-    </AuthorizeView>
 
-    <AuthorizeView Policy="">
-        <Authorized>
-            <MudNavGroup Title="System Management" Icon="@Icons.Material.Filled.Settings" IconColor="Color.Primary" Expanded="false">
-                <MudNavGroup Title="Organization and Authorization">
-                    <MudNavLink Href="/sys/organization" Icon="@Icons.Material.Filled.AccountBalance" IconColor="Color.Info">
-                        Organization
-                    </MudNavLink>
-                    <MudNavLink Href="/sys/system-users" Icon="@Icons.Material.Filled.VerifiedUser" IconColor="Color.Info">
-                        System Users
-                    </MudNavLink>
-                    <MudNavLink Href="/sys/authorization" Icon="@Icons.Material.Filled.Lock" IconColor="Color.Info">
-                        Authorization
-                    </MudNavLink>
-                    <MudNavLink Href="/sys/form-numbers" Icon="@Icons.Material.Filled.FormatListNumbered" IconColor="Color.Info">
-                        Form Numbers
-                    </MudNavLink>
-                </MudNavGroup>
-                <MudNavGroup Title="Document Management Definitions">
-                    <MudNavLink Href="/sys/document-management" Icon="@Icons.Material.Filled.Description" IconColor="Color.Info">
-                        Document Management
-                    </MudNavLink>
-                    <MudNavLink Href="/sys/process-tracking" Icon="@Icons.Material.Filled.Timeline" IconColor="Color.Info">
-                        Process Tracking
-                    </MudNavLink>
-                </MudNavGroup>
-                <MudNavGroup Title="Other Definitions">
-                    <MudNavLink Href="/sys/product-process-definitions" Icon="@Icons.Material.Filled.SettingsApplications" IconColor="Color.Info">
-                        Product Process Definitions
-                    </MudNavLink>
-                    <MudNavLink Href="/sys/supplier-customer" Icon="@Icons.Material.Filled.PeopleAlt" IconColor="Color.Info">
-                        Supplier and Customer
-                    </MudNavLink>
-                </MudNavGroup>
-                <MudNavLink Href="/sys/integration" Icon="@Icons.Material.Filled.Sync" IconColor="Color.Info">
-                    Integration
-                </MudNavLink>
-                <MudNavLink Href="/sys/localization" Icon="@Icons.Material.Filled.Language" IconColor="Color.Info">
-                    Localization
-                </MudNavLink>
-                <MudNavLink Href="/sys/customer-support" Icon="@Icons.Material.Filled.Headset" IconColor="Color.Info">
-                    Customer Support
-                </MudNavLink>
-            </MudNavGroup>
-        </Authorized>
-    </AuthorizeView>   
+    <MudNavGroup Title="Vaults" Icon="@Icons.Material.Filled.Security" IconColor="Color.Primary" Expanded="false">
+        <MudNavGroup Title="Personal Vaults" Icon="@Icons.Material.Filled.LockOpen" IconColor="Color.Info">
+            <MudNavLink Href="/vaults/personal" Icon="@Icons.Material.Filled.Person" IconColor="Color.Info">
+                Personal Vaults
+            </MudNavLink>
+        </MudNavGroup>
+        <MudNavGroup Title="Password Vaults" Icon="@Icons.Material.Filled.VpnKey" IconColor="Color.Info">
+            <MudNavLink Href="/vaults/password" Icon="@Icons.Material.Filled.Key" IconColor="Color.Info">
+                Password Vaults
+            </MudNavLink>
+        </MudNavGroup>
+    </MudNavGroup>
+
+    <MudNavGroup Title="Categories" Icon="@Icons.Material.Filled.Category" IconColor="Color.Primary" Expanded="false">
+        <MudNavLink Href="/categories" Icon="@Icons.Material.Filled.Label" IconColor="Color.Info">
+            Manage Categories
+        </MudNavLink>
+    </MudNavGroup>
+
+    <MudNavGroup Title="Settings" Icon="@Icons.Material.Filled.Settings" IconColor="Color.Primary" Expanded="false">
+        <MudNavLink Href="/settings/account" Icon="@Icons.Material.Filled.AccountCircle" IconColor="Color.Info">
+            Account Settings
+        </MudNavLink>
+        <MudNavLink Href="/settings/security" Icon="@Icons.Material.Filled.Security" IconColor="Color.Info">
+            Security
+        </MudNavLink>
+    </MudNavGroup>
+
+    <MudNavGroup Title="Help & Support" Icon="@Icons.Material.Filled.Help" IconColor="Color.Primary" Expanded="false">
+        <MudNavLink Href="/support/faq" Icon="@Icons.Material.Filled.QuestionAnswer" IconColor="Color.Info">
+            FAQ
+        </MudNavLink>
+        <MudNavLink Href="/support/contact" Icon="@Icons.Material.Filled.ContactSupport" IconColor="Color.Info">
+            Contact Support
+        </MudNavLink>
+    </MudNavGroup>
 </MudNavMenu>
+
 
 @code {
     private string AlertAssignmentIcon { get; set; } = "<path d=\"M19,3A2,2 0 0,1 21,5V19A2,2 0 0,1 19,21H5A2,2 0 0,1 3,19V5A2,2 0 0,1 5,3H9.18C9.6,1.84 10.7,1 12,1C13.3,1 14.4,1.84 14.82,3H19M12,3A1,1 0 0,0 11,4A1,1 0 0,0 12,5A1,1 0 0,0 13,4A1,1 0 0,0 12,3M7,7V5H5V19H19V5H17V7H7M11,9H13V13.5H11V9M11,15H13V17H11V15Z\" />";

@@ -13,7 +13,7 @@
 
 @inject ILocalStorageService _localStorageService
 @inject NavigationManager _navigationManager
-@inject AuthenticationStateProvider LoginAuthenticationStateProvider
+@inject CustomAuthenticationStateProvider LoginAuthenticationStateProvider
 @inject IAuthService AuthService
 @inject IUserService UserService
 
@@ -72,6 +72,12 @@
                            Size="Size.Large"
                            ThumbIcon="@(_isDarkMode ? Icons.Material.Filled.DarkMode : Icons.Material.Filled.LightMode)"
                            ThumbIconColor="@(_isDarkMode ? Color.Info : Color.Warning)" />
+                <!-- Theme Manager Icon Button -->
+                <MudIconButton Icon="@Icons.Material.Filled.Settings"
+                               Color="Color.Inherit"
+                               OnClick="@((e) => OpenThemeManager(true))"
+                               Class="ml-2" />
+
             </MudAppBar>
             <MudDrawer @bind-Open="_drawerOpen" Elevation="_themeManager.DrawerElevation" ClipMode="_themeManager.DrawerClipMode">
                 <NavMenu FirstName="@FirstName"
@@ -91,7 +97,7 @@
                     @Body
                 </MudContainer>
             </MudMainContent>
-            <MudThemeManagerButton OnClick="@((e) => OpenThemeManager(true))" />
+            @* <MudThemeManagerButton OnClick="@((e) => OpenThemeManager(true))" /> *@
             <MudThemeManager Open="_themeManagerOpen"
                              OpenChanged="OpenThemeManager"
                              Theme="_themeManager"
@@ -109,7 +115,6 @@
         {
             Theme = new PandoraAdminDashboard(),
             DrawerClipMode = DrawerClipMode.Always,
-            FontFamily = "Montserrat",
             DefaultBorderRadius = 5,
             AppBarElevation = 2,
             DrawerElevation = 5,
@@ -196,9 +201,7 @@
 
     private async Task Logout()
     {
-        await AuthService.LogoutAsync();
-        var customAuthProvider = (CustomAuthenticationStateProvider)LoginAuthenticationStateProvider;
-        await customAuthProvider.NotifyUserLogout();
+        await LoginAuthenticationStateProvider.NotifyUserLogout();
         _navigationManager.NavigateTo("/auth/login", true);
     }
 

@@ -30,6 +30,7 @@ builder.Services.AddHttpClient("PandoraAPI", client =>
 builder.Services.AddTransient(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("PandoraAPI"));
 
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
+builder.Services.AddScoped<CustomAuthenticationStateProvider>();
 
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<BaseAddressAuthorizationMessageHandler>();

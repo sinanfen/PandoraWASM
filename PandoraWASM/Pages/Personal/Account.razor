@@ -262,7 +262,6 @@ else
         }
     }
 
-
     private void SaveChanges(string text, Severity severity)
     {
         Snackbar.Add(text, severity);
@@ -379,7 +378,8 @@ else
 
             if (resultMessage != null && resultMessage.Contains("successful"))
             {
-                await AuthService.LogoutAsync();
+                await ((CustomAuthenticationStateProvider)LoginAuthenticationStateProvider).NotifyUserLogout();
+
                 Snackbar.Add("Your password has been successfully updated.", Severity.Success);
                 NavigationManager.NavigateTo("/auth/login");
             }
@@ -438,7 +438,6 @@ else
             Snackbar.Add($"Profile details could not be updated: {result.ErrorMessage}", Severity.Error);
         }
     }
-
 
     private void ReloadPage()
     {

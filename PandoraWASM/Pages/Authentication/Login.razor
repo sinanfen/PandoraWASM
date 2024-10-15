@@ -1,4 +1,6 @@
 ﻿@page "/auth/login"
+
+
 @using Blazored.LocalStorage
 @using Microsoft.AspNetCore.Components.Authorization
 @using Pandora.Shared.DTOs.UserDTOs
@@ -7,10 +9,8 @@
 @using System.Text.RegularExpressions
 
 @layout LoginLayout
-
 @inject ISnackbar Snackbar
-
-@inject AuthenticationStateProvider LoginAuthenticationStateProvider
+@inject CustomAuthenticationStateProvider LoginAuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
 @inject ILocalStorageService LocalStorageService
@@ -26,9 +26,7 @@
     </MudAlert>
 }
 
-<MudTextField T="string" @bind-Value="@userLoginDto.UsernameOrEmail" Label="Username Or Email" Variant="Variant.Outlined" Class="my-6">
-
-</MudTextField>
+<MudTextField T="string" @bind-Value="@userLoginDto.UsernameOrEmail" Label="Username Or Email" Variant="Variant.Outlined" Class="my-6"></MudTextField>
 
 <MudTextField @bind-Value="@userLoginDto.Password"
               Label="Password"
@@ -45,11 +43,9 @@
     </MudLink>
 </div>
 
-
 <MudButton Variant="Variant.Filled" Style="@($"background:{Colors.Amber.Darken3};  font-weight:bold;")" ButtonType="ButtonType.Submit" Size="Size.Large" FullWidth="true" OnClick="HandleLogin">
     LOGIN
 </MudButton>
-
 
 @code {
     bool PasswordVisibility;
@@ -72,16 +68,20 @@
         }
     }
 
-    private UserLoginDto userLoginDto= new UserLoginDto();
+    private UserLoginDto userLoginDto = new UserLoginDto();
     private bool loginFailed = false;
 
     private async Task HandleLogin()
     {
-        var success = await AuthService.LoginAsync(userLoginDto);
+        var cts = new CancellationTokenSource(10_000);
+        var success = await AuthService.LoginAsync(userLoginDto, cts.Token);
         if (success)
         {
+            var token = await AuthService.GetTokenAsync();
+            await LoginAuthenticationStateProvider.NotifyUserAuthentication(token);
             loginFailed = false;
-            NavigationManager.NavigateTo("/home/dashboard");
+            StateHasChanged(); 
+            NavigationManager.NavigateTo("/home/dashboard", forceLoad: false);
         }
         else
         {
@@ -92,7 +92,6 @@
 
     private bool IsValidEmail(string input)
     {
-        // E-posta adresini kontrol eden basit bir regex
         var emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
         return Regex.IsMatch(input, emailPattern);
     }

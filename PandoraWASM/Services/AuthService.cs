@@ -1,5 +1,4 @@
-﻿using System.Net.Http.Headers;
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using Blazored.LocalStorage;
 using Pandora.Shared.DTOs.UserDTOs;
 using PandoraWASM.Responses;
@@ -16,22 +15,19 @@ public class AuthService : IAuthService
         _localStorage = localStorage;
     }
 
-    public async Task<bool> LoginAsync(UserLoginDto loginDto)
+    public async Task<bool> LoginAsync(UserLoginDto loginDto, CancellationToken cancellationToken)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/auth/login", loginDto);
-
+        var response = await _httpClient.PostAsJsonAsync("api/auth/login", loginDto, cancellationToken);
         if (response.IsSuccessStatusCode)
         {
-            var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>();
+            var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>(cancellationToken);
 
-            if (loginResponse != null && !string.IsNullOrEmpty(loginResponse.Token))
+            if (loginResponse?.Token != null)
             {
-                await _localStorage.SetItemAsync("authToken", loginResponse.Token);
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
+                await _localStorage.SetItemAsync("authToken", loginResponse.Token, cancellationToken);
                 return true;
             }
         }
-
         return false;
     }
 
@@ -56,16 +52,19 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task LogoutAsync()
-    {
-        await _localStorage.RemoveItemAsync("authToken");
-        _httpClient.DefaultRequestHeaders.Authorization = null;
-    }
-
     public async Task<string> GetTokenAsync()
     {
-        return await _localStorage.GetItemAsync<string>("authToken");
+        try
+        {
+            return await _localStorage.GetItemAsync<string>("authToken");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error retrieving token: {ex.Message}");
+            return string.Empty;
+        }
     }
+
 
     public async Task<UserDto> GetCurrentUserAsync()
     {
@@ -75,7 +74,7 @@ public class AuthService : IAuthService
             return null;
         }
 
-        var response = await _httpClient.GetAsync("auth/userinfo"); 
+        var response = await _httpClient.GetAsync("auth/userinfo");
         if (response.IsSuccessStatusCode)
         {
             var userInfo = await response.Content.ReadFromJsonAsync<UserDto>();

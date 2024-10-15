@@ -1,5 +1,6 @@
 ﻿using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -19,14 +20,25 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 
     public async Task NotifyUserAuthentication(string token)
     {
-        var handler = new JwtSecurityTokenHandler();
-        var jwtToken = handler.ReadJwtToken(token);
-        var identity = new ClaimsIdentity(jwtToken.Claims, "Bearer");
-        var user = new ClaimsPrincipal(identity);
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(token);
 
-        NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        await _localStorage.SetItemAsync("authToken", token);
+            if (jwtToken == null)
+                throw new SecurityTokenException("Invalid token");
+
+            var identity = new ClaimsIdentity(jwtToken.Claims, "Bearer");
+            var user = new ClaimsPrincipal(identity);
+
+            NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            await _localStorage.SetItemAsync("authToken", token);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during token processing: {ex.Message}");
+        }
     }
 
     public async Task NotifyUserLogout()
