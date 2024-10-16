@@ -4,8 +4,8 @@ namespace PandoraWASM.Services;
 
 public interface IAuthService
 {
-    Task<bool> LoginAsync(UserLoginDto loginDto, CancellationToken cancellationToken);
-    Task<bool> RegisterAsync(UserRegisterDto registerDto);
+    Task<(bool isSuccess, string message)> LoginAsync(UserLoginDto loginDto, CancellationToken cancellationToken);
+    Task<(bool isSuccess, string message)> RegisterAsync(UserRegisterDto registerDto, CancellationToken cancellationToken);
     Task<string> ChangePasswordAsync(UserPasswordChangeDto changePasswordDto);
     Task<string> GetTokenAsync();
     Task<UserDto> GetCurrentUserAsync();

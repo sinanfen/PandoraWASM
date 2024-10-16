@@ -1,45 +1,62 @@
 ﻿@page "/pages/authentication/register"
+
+
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
+
+
 @using Pandora.Shared.DTOs.UserDTOs
 @using Pandora.Shared.Enums
 @using PandoraWASM.Services
 @using PandoraWASM.Shared
+
 @layout LoginLayout
 
-<MudText Typo="Typo.h4" GutterBottom="true">Sign Up</MudText>
-<MudText>Already have an account? <MudLink Href="/auth/login">Sign In</MudLink></MudText>
-
-<MudTextField T="string" @bind-Value="registerModel.Username" Label="Username" Variant="Variant.Outlined" Class="my-4" />
-<MudTextField T="string" @bind-Value="registerModel.Email" Label="E-mail" Variant="Variant.Outlined" />
-<MudTextField T="string" @bind-Value="registerModel.Password" Label="Password" Variant="Variant.Outlined" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="TogglePasswordVisibility" Class="mt-4" />
-<MudTextField T="string" @bind-Value="registerModel.ConfirmPassword" Label="Confirm Password" Variant="Variant.Outlined" InputType="InputType.Password" Class="mt-4" />
-<MudTextField T="string" @bind-Value="registerModel.PhoneNumber" Label="Phone Number" Variant="Variant.Outlined" Class="mt-4" />
-
-@if (registerModel is IndividualUserRegisterDto individualModel)
+@if (registerModel is null)
 {
-    <MudTextField T="string" @bind-Value="individualModel.FirstName" Label="First Name" Variant="Variant.Outlined" Class="mt-4" />
-    <MudTextField T="string" @bind-Value="individualModel.LastName" Label="Last Name" Variant="Variant.Outlined" Class="mt-4" />
+    <p>Lütfen bekleyin...</p>
 }
-else if (registerModel is CorporateUserRegisterDto corporateModel)
+else
 {
-    <MudTextField T="string" @bind-Value="corporateModel.CompanyName" Label="Company Name" Variant="Variant.Outlined" Class="mt-4" />
-    <MudTextField T="string" @bind-Value="corporateModel.TaxNumber" Label="Tax Number" Variant="Variant.Outlined" Class="mt-4" />
+    <MudPaper Class="pa-4" Elevation="0">
+        <MudText Typo="Typo.h4" GutterBottom="true">Sign Up</MudText>
+        <MudText>Already have an account? <MudLink Href="/auth/login">Sign In</MudLink></MudText>
+
+        <MudTextField T="string" @bind-Value="registerModel.Username" Label="Username" Variant="Variant.Outlined" Class="my-4" />
+        <MudTextField T="string" @bind-Value="registerModel.Email" Label="E-mail" Variant="Variant.Outlined" />
+        <MudTextField T="string" @bind-Value="registerModel.Password" Label="Password" Variant="Variant.Outlined" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="TogglePasswordVisibility" Class="mt-4" />
+        <MudTextField T="string" @bind-Value="registerModel.ConfirmPassword" Label="Confirm Password" Variant="Variant.Outlined" InputType="InputType.Password" Class="mt-4" />
+        <MudTextField T="string" @bind-Value="registerModel.PhoneNumber" Label="Phone Number" Variant="Variant.Outlined" Class="mt-4" />
+
+        @if (registerModel is IndividualUserRegisterDto individualModel)
+        {
+            <MudTextField T="string" @bind-Value="individualModel.FirstName" Label="First Name" Variant="Variant.Outlined" Class="mt-4" />
+            <MudTextField T="string" @bind-Value="individualModel.LastName" Label="Last Name" Variant="Variant.Outlined" Class="mt-4" />
+        }
+        else if (registerModel is CorporateUserRegisterDto corporateModel)
+        {
+            <MudTextField T="string" @bind-Value="corporateModel.CompanyName" Label="Company Name" Variant="Variant.Outlined" Class="mt-4" />
+            <MudTextField T="string" @bind-Value="corporateModel.TaxNumber" Label="Tax Number" Variant="Variant.Outlined" Class="mt-4" />
+        }
+
+        <MudSelect T="UserType" @bind-Value="userType" Label="User Type" Variant="Variant.Outlined" Class="mt-4" OnChange="OnUserTypeChanged">
+            <MudSelectItem Value="UserType.Individual">Individual</MudSelectItem>
+            <MudSelectItem Value="UserType.Corporate">Company</MudSelectItem>
+        </MudSelect>
+
+        <MudStack Row AlignItems="AlignItems.Center" Class="my-3">
+            <MudSwitch T="bool" @bind-Checked="AgreeToTerms" @bind-Value="AgreeToTerms" Color="Color.Primary" Size="Size.Large" />
+            <MudText Class="ml-2">I agree to the terms and privacy</MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(AgreeToTerms==false)" Size="Size.Large" FullWidth="true" OnClick="RegisterAsync">Register</MudButton>
+    </MudPaper>
 }
-
-<MudSelect T="UserType" @bind-Value="userType" Label="User Type" Variant="Variant.Outlined" Class="mt-4" OnChange="OnUserTypeChanged">
-    <MudSelectItem Value="UserType.Individual">Individual</MudSelectItem>
-    <MudSelectItem Value="UserType.Corporate">Company</MudSelectItem>
-</MudSelect>
-
-<MudCheckBox T="bool" @bind-Checked="AgreeToTerms" Label="I agree to the terms and privacy" Color="Color.Primary" Class="ml-n1 my-3" />
-<MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!AgreeToTerms)" Size="Size.Large" FullWidth="true" OnClick="RegisterAsync">Register</MudButton>
 
 @code {
     private UserRegisterDto registerModel; // Can be CorporateUserRegisterDto or IndividualUserRegisterDto
     private UserType userType = UserType.Individual; // Default to Individual
-    private bool AgreeToTerms { get; set; }
+    private bool AgreeToTerms { get; set; } = false;
     private bool PasswordVisibility;
     private InputType PasswordInput = InputType.Password;
     private string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
@@ -64,29 +81,17 @@ else if (registerModel is CorporateUserRegisterDto corporateModel)
 
     private async Task RegisterAsync()
     {
-        if (registerModel is IndividualUserRegisterDto individualModel)
+        var cts = new CancellationTokenSource(10_000);
+        var (success, message) = await AuthService.RegisterAsync(registerModel, cts.Token);
+
+        if (success)
         {
-            if (await AuthService.RegisterAsync(individualModel))
-            {
-                Snackbar.Add("Registration successful! Redirecting to login...", Severity.Success);
-                Navigation.NavigateTo("/auth/login");
-            }
-            else
-            {
-                Snackbar.Add("Registration failed. Please check your details and try again.", Severity.Error);
-            }
+            Snackbar.Add("Registration successful! Redirecting to login...", Severity.Success);
+            Navigation.NavigateTo("/auth/login");
         }
-        else if (registerModel is CorporateUserRegisterDto corporateModel)
+        else
         {
-            if (await AuthService.RegisterAsync(corporateModel))
-            {
-                Snackbar.Add("Registration successful! Redirecting to login...", Severity.Success);
-                Navigation.NavigateTo("/auth/login");
-            }
-            else
-            {
-                Snackbar.Add("Registration failed. Please check your details and try again.", Severity.Error);
-            }
+            Snackbar.Add(message, Severity.Error);
         }
     }
 

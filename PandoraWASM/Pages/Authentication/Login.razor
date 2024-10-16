@@ -15,6 +15,10 @@
 @inject IAuthService AuthService
 @inject ILocalStorageService LocalStorageService
 
+
+<div class="d-flex justify-center">
+    <MudImage Fluid ObjectFit="ObjectFit.Cover" Src="/img/pandora.jpg" Alt="PANDORA" Class="rounded-lg" />
+</div>
 <MudText Align="Align.Center" Class="mt-2 mb-2" Typo="Typo.h4" GutterBottom="true">
     Sign In
 </MudText>
@@ -36,12 +40,13 @@
               AdornmentIcon="@PasswordInputIcon"
               OnAdornmentClick="TogglePasswordVisibility" />
 
-<div Class="d-flex justify-space-between align-center">
-    <MudCheckBox T="bool" Label="Remember me?" Color="Color.Primary" Class="ml-n1 my-3"></MudCheckBox>
-    <MudLink Href="/pages/authentication/forgot-password">
-        Forgot Password
+<div class="d-flex justify-space-between align-center mt-4">
+    <MudText Typo="Typo.body2">Hesabınız yok mu?</MudText>
+    <MudLink Href="/pages/authentication/register" Class="ml-2" Style="font-weight:bold;">
+        Kayıt Ol
     </MudLink>
 </div>
+
 
 <MudButton Variant="Variant.Filled" Style="@($"background:{Colors.Amber.Darken3};  font-weight:bold;")" ButtonType="ButtonType.Submit" Size="Size.Large" FullWidth="true" OnClick="HandleLogin">
     LOGIN
@@ -74,19 +79,20 @@
     private async Task HandleLogin()
     {
         var cts = new CancellationTokenSource(10_000);
-        var success = await AuthService.LoginAsync(userLoginDto, cts.Token);
+        var (success, message) = await AuthService.LoginAsync(userLoginDto, cts.Token);
+
         if (success)
         {
             var token = await AuthService.GetTokenAsync();
             await LoginAuthenticationStateProvider.NotifyUserAuthentication(token);
             loginFailed = false;
-            StateHasChanged(); 
+            StateHasChanged();
             NavigationManager.NavigateTo("/home/dashboard", forceLoad: false);
         }
         else
         {
             loginFailed = true;
-            Snackbar.Add("Incorrect username or password.", Severity.Error);
+            Snackbar.Add(message, Severity.Error);
         }
     }
 

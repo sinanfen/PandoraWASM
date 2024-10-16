@@ -15,26 +15,47 @@ public class AuthService : IAuthService
         _localStorage = localStorage;
     }
 
-    public async Task<bool> LoginAsync(UserLoginDto loginDto, CancellationToken cancellationToken)
+    public async Task<(bool isSuccess, string message)> LoginAsync(UserLoginDto loginDto, CancellationToken cancellationToken)
     {
         var response = await _httpClient.PostAsJsonAsync("api/auth/login", loginDto, cancellationToken);
-        if (response.IsSuccessStatusCode)
-        {
-            var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>(cancellationToken);
+        var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>(cancellationToken);
 
-            if (loginResponse?.Token != null)
+        if (loginResponse != null)
+        {
+            if (loginResponse.Success)
             {
-                await _localStorage.SetItemAsync("authToken", loginResponse.Token, cancellationToken);
-                return true;
+                if (!string.IsNullOrEmpty(loginResponse.Token))
+                {
+                    await _localStorage.SetItemAsync("authToken", loginResponse.Token, cancellationToken);
+                }
+                return (true, loginResponse.Message ?? "Login successful!");
+            }
+            else
+            {
+                return (false, loginResponse.Message ?? "Login failed.");
             }
         }
-        return false;
+        return (false, "An unexpected error occurred.");
     }
 
-    public async Task<bool> RegisterAsync(UserRegisterDto registerDto)
+
+    public async Task<(bool isSuccess, string message)> RegisterAsync(UserRegisterDto registerDto, CancellationToken cancellationToken)
     {
-        var response = await _httpClient.PostAsJsonAsync("auth/register", registerDto);
-        return response.IsSuccessStatusCode;
+        var response = await _httpClient.PostAsJsonAsync("api/auth/register", registerDto, cancellationToken);
+        var registerResponse = await response.Content.ReadFromJsonAsync<RegisterResponse>(cancellationToken);
+
+        if (registerResponse != null)
+        {
+            if (registerResponse.Success)
+            {
+                return (true, registerResponse.Message ?? "Registration successful!");
+            }
+            else
+            {
+                return (false, registerResponse.Message ?? "Registration failed.");
+            }
+        }
+        return (false, "An unexpected error occurred.");
     }
 
     public async Task<string> ChangePasswordAsync(UserPasswordChangeDto changePasswordDto)
