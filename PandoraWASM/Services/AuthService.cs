@@ -95,7 +95,7 @@ public class AuthService : IAuthService
             return null;
         }
 
-        var response = await _httpClient.GetAsync("auth/userinfo");
+        var response = await _httpClient.GetAsync("/api/users/userinfo");
         if (response.IsSuccessStatusCode)
         {
             var userInfo = await response.Content.ReadFromJsonAsync<UserDto>();

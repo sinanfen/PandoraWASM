@@ -206,6 +206,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        var cts = new CancellationTokenSource();
         var authState = await LoginAuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
@@ -217,7 +218,7 @@ else
             {
                 Console.WriteLine("User ID: " + userIdClaim);
                 userId = Guid.Parse(userIdClaim);
-                loggedInUser = await UserService.GetUserAsync(userId);
+                loggedInUser = await UserService.GetUserAsync(userId, cts.Token);
 
                 if (loggedInUser != null)
                     userUpdateDto = ConvertToUserUpdateDto(loggedInUser);

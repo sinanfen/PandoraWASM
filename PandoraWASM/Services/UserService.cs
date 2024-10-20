@@ -15,23 +15,23 @@ public class UserService : IUserService
         _localStorageService = localStorageService;
     }
 
-    public async Task<UserDto> GetUserAsync(Guid userId)
+    public async Task<UserDto> GetUserAsync(Guid userId, CancellationToken cancellationToken)
     {
-        var token = await _localStorageService.GetItemAsync<string>("authToken"); // Fetch token from local storage
+        var token = await _localStorageService.GetItemAsync<string>("authToken", cancellationToken); // Fetch token from local storage
 
         if (!string.IsNullOrEmpty(token))
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var response = await _httpClient.GetAsync($"api/users/{userId}");
+        var response = await _httpClient.GetAsync($"api/users/{userId}", cancellationToken);
         if (response.IsSuccessStatusCode)
             return await response.Content.ReadFromJsonAsync<UserDto>();
 
         return null;
     }
 
-    public async Task<List<UserDto>> GetAllUsersAsync()
+    public async Task<List<UserDto>> GetAllUsersAsync(CancellationToken cancellationToken)
     {
-        var response = await _httpClient.GetAsync("api/users");
+        var response = await _httpClient.GetAsync("api/users", cancellationToken);
         if (response.IsSuccessStatusCode)
             return await response.Content.ReadFromJsonAsync<List<UserDto>>();
         return new List<UserDto>();
@@ -57,9 +57,9 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<bool> DeleteUserAsync(Guid userId)
+    public async Task<bool> DeleteUserAsync(Guid userId, CancellationToken cancellationToken)
     {
-        var response = await _httpClient.DeleteAsync($"api/users/delete/{userId}");
+        var response = await _httpClient.DeleteAsync($"api/users/delete/{userId}", cancellationToken);
         return response.IsSuccessStatusCode;
     }
 }

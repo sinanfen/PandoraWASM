@@ -1,0 +1,48 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Pandora.Shared.DTOs.CategoryDTOs
+@using Pandora.Shared.DTOs.UserDTOs
+@using PandoraWASM.Services
+
+@inject ICategoryService CategoryService
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider LoginAuthenticationStateProvider
+
+@page "/categories"
+
+@if (categoryDtos == null)
+{
+    <p><em>Lütfen bekleyiniz</em></p>
+}
+else
+{
+    foreach (var category in categoryDtos)
+    {
+        <MudCard>
+            <MudCardContent>
+                <MudText>@category.Name</MudText>
+                <MudText>@category.Description</MudText>
+            </MudCardContent>
+        </MudCard>
+    }
+}
+
+@code {
+    private IList<CategoryDto> categoryDtos = new List<CategoryDto>();
+    private UserDto loggedInUser;
+    private Guid userId;
+    protected async override Task OnInitializedAsync()
+    {
+        var cts = new CancellationTokenSource();
+        var authState = await LoginAuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user == null || user.Identity == null || !user.Identity.IsAuthenticated)
+            NavigationManager.NavigateTo("/login", true);
+
+        var userIdClaim = user.FindFirst("nameid")?.Value; // Use "nameid" as the claim type
+        Console.WriteLine("User ID: " + userIdClaim);
+        userId = Guid.Parse(userIdClaim);
+        loggedInUser = await UserService.GetUserAsync(userId, cts.Token);
+        categoryDtos = await CategoryService.GetCategories(loggedInUser.Id, cts.Token);
+    }
+}
