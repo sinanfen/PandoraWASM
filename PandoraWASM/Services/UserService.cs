@@ -20,16 +20,11 @@ public class UserService : IUserService
         var token = await _localStorageService.GetItemAsync<string>("authToken"); // Fetch token from local storage
 
         if (!string.IsNullOrEmpty(token))
-        {
-            // Attach token to Authorization header
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        }
 
         var response = await _httpClient.GetAsync($"api/users/{userId}");
         if (response.IsSuccessStatusCode)
-        {
             return await response.Content.ReadFromJsonAsync<UserDto>();
-        }
 
         return null;
     }
@@ -38,37 +33,15 @@ public class UserService : IUserService
     {
         var response = await _httpClient.GetAsync("api/users");
         if (response.IsSuccessStatusCode)
-        {
             return await response.Content.ReadFromJsonAsync<List<UserDto>>();
-        }
         return new List<UserDto>();
     }
 
-    public async Task<(bool Success, string? ErrorMessage)> UpdateIndividualUserAsync(IndividualUserUpdateDto individualUserUpdateDto)
+    public async Task<(bool Success, string? ErrorMessage)> UpdateUserAsync(UserUpdateDto userUpdateDto, CancellationToken cancellationToken)
     {
         try
         {
-            var response = await _httpClient.PutAsJsonAsync($"api/users/individual/{individualUserUpdateDto.Id}", individualUserUpdateDto);
-
-            if (response.IsSuccessStatusCode)
-                return (true, null);
-            else
-            {
-                var content = await response.Content.ReadAsStringAsync();
-                return (false, $"Error: {response.StatusCode}. Details: {content}");
-            }
-        }
-        catch (Exception ex)
-        {
-            return (false, $"Exception: {ex.Message}");
-        }
-    }
-
-    public async Task<(bool Success, string? ErrorMessage)> UpdateCorporateUserAsync(CorporateUserUpdateDto corporateUserUpdateDto)
-    {
-        try
-        {
-            var response = await _httpClient.PutAsJsonAsync($"api/users/corporate/{corporateUserUpdateDto.Id}", corporateUserUpdateDto);
+            var response = await _httpClient.PutAsJsonAsync($"api/users/{userUpdateDto.Id}", userUpdateDto, cancellationToken);
 
             if (response.IsSuccessStatusCode)
                 return (true, null);

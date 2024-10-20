@@ -5,9 +5,7 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
-
 @using Pandora.Shared.DTOs.UserDTOs
-@using Pandora.Shared.Enums
 @using PandoraWASM.Services
 @using PandoraWASM.Shared
 
@@ -28,34 +26,20 @@ else
         <MudTextField T="string" @bind-Value="registerModel.Password" Label="Password" Variant="Variant.Outlined" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="TogglePasswordVisibility" Class="mt-4" />
         <MudTextField T="string" @bind-Value="registerModel.ConfirmPassword" Label="Confirm Password" Variant="Variant.Outlined" InputType="InputType.Password" Class="mt-4" />
         <MudTextField T="string" @bind-Value="registerModel.PhoneNumber" Label="Phone Number" Variant="Variant.Outlined" Class="mt-4" />
-
-        @if (registerModel is IndividualUserRegisterDto individualModel)
-        {
-            <MudTextField T="string" @bind-Value="individualModel.FirstName" Label="First Name" Variant="Variant.Outlined" Class="mt-4" />
-            <MudTextField T="string" @bind-Value="individualModel.LastName" Label="Last Name" Variant="Variant.Outlined" Class="mt-4" />
-        }
-        else if (registerModel is CorporateUserRegisterDto corporateModel)
-        {
-            <MudTextField T="string" @bind-Value="corporateModel.CompanyName" Label="Company Name" Variant="Variant.Outlined" Class="mt-4" />
-            <MudTextField T="string" @bind-Value="corporateModel.TaxNumber" Label="Tax Number" Variant="Variant.Outlined" Class="mt-4" />
-        }
-
-        <MudSelect T="UserType" @bind-Value="userType" Label="User Type" Variant="Variant.Outlined" Class="mt-4" OnChange="OnUserTypeChanged">
-            <MudSelectItem Value="UserType.Individual">Individual</MudSelectItem>
-            <MudSelectItem Value="UserType.Corporate">Company</MudSelectItem>
-        </MudSelect>
+        <MudTextField T="string" @bind-Value="registerModel.FirstName" Label="First Name" Variant="Variant.Outlined" Class="mt-4" />
+        <MudTextField T="string" @bind-Value="registerModel.LastName" Label="Last Name" Variant="Variant.Outlined" Class="mt-4" />
 
         <MudStack Row AlignItems="AlignItems.Center" Class="my-3">
             <MudSwitch T="bool" @bind-Checked="AgreeToTerms" @bind-Value="AgreeToTerms" Color="Color.Primary" Size="Size.Large" />
             <MudText Class="ml-2">I agree to the terms and privacy</MudText>
         </MudStack>
+
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(AgreeToTerms==false)" Size="Size.Large" FullWidth="true" OnClick="RegisterAsync">Register</MudButton>
     </MudPaper>
 }
 
 @code {
     private UserRegisterDto registerModel; // Can be CorporateUserRegisterDto or IndividualUserRegisterDto
-    private UserType userType = UserType.Individual; // Default to Individual
     private bool AgreeToTerms { get; set; } = false;
     private bool PasswordVisibility;
     private InputType PasswordInput = InputType.Password;
@@ -63,20 +47,7 @@ else
 
     protected override void OnInitialized()
     {
-        OnUserTypeChanged(userType); // Initialize with default type
-    }
-
-    private void OnUserTypeChanged(UserType selectedUserType)
-    {
-        userType = selectedUserType;
-        if (userType == UserType.Individual)
-        {
-            registerModel = new IndividualUserRegisterDto();
-        }
-        else if (userType == UserType.Corporate)
-        {
-            registerModel = new CorporateUserRegisterDto();
-        }
+        registerModel = new UserRegisterDto();
     }
 
     private async Task RegisterAsync()
@@ -90,9 +61,7 @@ else
             Navigation.NavigateTo("/auth/login");
         }
         else
-        {
             Snackbar.Add(message, Severity.Error);
-        }
     }
 
     private void TogglePasswordVisibility()

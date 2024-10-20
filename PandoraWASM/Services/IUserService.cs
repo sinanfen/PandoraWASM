@@ -6,7 +6,6 @@ public interface IUserService
 {
     Task<UserDto> GetUserAsync(Guid userId);
     Task<List<UserDto>> GetAllUsersAsync();
-    Task<(bool Success, string? ErrorMessage)> UpdateCorporateUserAsync(CorporateUserUpdateDto corporateUserUpdateDto);
-    Task<(bool Success, string? ErrorMessage)> UpdateIndividualUserAsync(IndividualUserUpdateDto individualUserUpdateDto);
+    Task<(bool Success, string? ErrorMessage)> UpdateUserAsync(UserUpdateDto userUpdateDto, CancellationToken cancellationToken);
     Task<bool> DeleteUserAsync(Guid userId);
 }

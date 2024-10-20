@@ -5,7 +5,6 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using Pandora.Shared.DTOs.UserDTOs
 @using System.Security.Claims
-@using Pandora.Shared.Enums
 @using PandoraWASM.Services
 
 @inject ISnackbar Snackbar
@@ -53,42 +52,21 @@ else
                         </MudCardHeader>
                         <MudCardContent>
                             <MudGrid>
-                                @if (isIndividual)
-                                {
-                                    <MudItem xs="12" md="12">
-                                        <MudTextField @bind-Value="individualUserUpdateDto.Username" Label="Username" Variant="Variant.Outlined" />
-                                    </MudItem>
-                                    <MudItem xs="12" md="6">
-                                        <MudTextField @bind-Value="individualUserUpdateDto.FirstName" Label="First Name" Variant="Variant.Outlined" />
-                                    </MudItem>
-                                    <MudItem xs="12" md="6">
-                                        <MudTextField @bind-Value="individualUserUpdateDto.LastName" Label="Last Name" Variant="Variant.Outlined" />
-                                    </MudItem>
-                                    <MudItem xs="12" md="6">
-                                        <MudTextField @bind-Value="individualUserUpdateDto.Email" Label="E-mail" Variant="Variant.Outlined" InputType="InputType.Email" />
-                                    </MudItem>
-                                    <MudItem xs="12" md="6">
-                                        <MudTextField @bind-Value="individualUserUpdateDto.PhoneNumber" Label="Phone Number" Variant="Variant.Outlined" InputType="InputType.Telephone" />
-                                    </MudItem>
-                                }
-                                else
-                                {
-                                    <MudItem xs="12" md="12">
-                                        <MudTextField @bind-Value="corporateUserUpdateDto.Username" Label="Username" Variant="Variant.Outlined" />
-                                    </MudItem>
-                                    <MudItem xs="12" md="6">
-                                        <MudTextField @bind-Value="corporateUserUpdateDto.CompanyName" Label="Company Name" Variant="Variant.Outlined" />
-                                    </MudItem>
-                                    <MudItem xs="12" md="6">
-                                        <MudTextField @bind-Value="corporateUserUpdateDto.TaxNumber" Label="Tax Number" Variant="Variant.Outlined" />
-                                    </MudItem>
-                                    <MudItem xs="12" md="6">
-                                        <MudTextField @bind-Value="corporateUserUpdateDto.Email" Label="E-mail" Variant="Variant.Outlined" InputType="InputType.Email" />
-                                    </MudItem>
-                                    <MudItem xs="12" md="6">
-                                        <MudTextField @bind-Value="corporateUserUpdateDto.PhoneNumber" Label="Phone Number" Variant="Variant.Outlined" InputType="InputType.Telephone" />
-                                    </MudItem>
-                                }
+                                <MudItem xs="12" md="12">
+                                    <MudTextField @bind-Value="userUpdateDto.Username" Label="Username" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudTextField @bind-Value="userUpdateDto.FirstName" Label="First Name" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudTextField @bind-Value="userUpdateDto.LastName" Label="Last Name" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudTextField @bind-Value="userUpdateDto.Email" Label="E-mail" Variant="Variant.Outlined" InputType="InputType.Email" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudTextField @bind-Value="userUpdateDto.PhoneNumber" Label="Phone Number" Variant="Variant.Outlined" InputType="InputType.Telephone" />
+                                </MudItem>
                             </MudGrid>
                         </MudCardContent>
                         <MudCardActions Class="pb-4 pl-4">
@@ -179,8 +157,7 @@ else
     private ClaimsPrincipal user;
     private Guid userId;
     private UserDto loggedInUser;
-    private IndividualUserUpdateDto individualUserUpdateDto;
-    private CorporateUserUpdateDto corporateUserUpdateDto;
+    protected UserUpdateDto userUpdateDto = new UserUpdateDto();
 
     private string statusMessage;
     private string currentImagePath;
@@ -243,23 +220,13 @@ else
                 loggedInUser = await UserService.GetUserAsync(userId);
 
                 if (loggedInUser != null)
-                {
-                    isIndividual = loggedInUser.UserType == Pandora.Shared.Enums.UserType.Individual;
-                    if (isIndividual)
-                        individualUserUpdateDto = ConvertToIndividualUserUpdateDto(loggedInUser);
-                    else
-                        corporateUserUpdateDto = ConvertToCorporateUserUpdateDto(loggedInUser);
-                }
+                    userUpdateDto = ConvertToUserUpdateDto(loggedInUser);
             }
             else
-            {
                 Console.WriteLine("User ID claim not found.");
-            }
         }
         else
-        {
             Console.WriteLine("User is not authenticated.");
-        }
     }
 
     private void SaveChanges(string text, Severity severity)
@@ -384,9 +351,7 @@ else
                 NavigationManager.NavigateTo("/auth/login");
             }
             else
-            {
                 Snackbar.Add(resultMessage, Severity.Error);
-            }
         }
         catch (Exception ex)
         {
@@ -399,26 +364,14 @@ else
     {
         try
         {
-            if (isIndividual)
+            if (userUpdateDto == null)
             {
-                if (individualUserUpdateDto == null)
-                {
-                    Snackbar.Add("Individual user data is missing.", Severity.Error);
-                    return;
-                }
-                var result = await UserService.UpdateIndividualUserAsync(individualUserUpdateDto);
-                HandleUpdateResult(result);
+                Snackbar.Add("User data is missing.", Severity.Error);
+                return;
             }
-            else
-            {
-                if (corporateUserUpdateDto == null)
-                {
-                    Snackbar.Add("Corporate user data is missing.", Severity.Error);
-                    return;
-                }
-                var result = await UserService.UpdateCorporateUserAsync(corporateUserUpdateDto);
-                HandleUpdateResult(result);
-            }
+            var cts = new CancellationTokenSource();
+            var result = await UserService.UpdateUserAsync(userUpdateDto, cts.Token);
+            HandleUpdateResult(result);
         }
         catch (Exception ex)
         {
@@ -430,13 +383,9 @@ else
     private void HandleUpdateResult((bool Success, string ErrorMessage) result)
     {
         if (result.Success)
-        {
             Snackbar.Add("Profile details have been updated successfully.", Severity.Success);
-        }
         else
-        {
             Snackbar.Add($"Profile details could not be updated: {result.ErrorMessage}", Severity.Error);
-        }
     }
 
     private void ReloadPage()
@@ -445,40 +394,17 @@ else
         NavigationManager.NavigateTo(currentUri, forceLoad: true);
     }
 
-    private IndividualUserUpdateDto ConvertToIndividualUserUpdateDto(UserDto userDto)
+    private UserUpdateDto ConvertToUserUpdateDto(UserDto loggedInUser)
     {
-        if (userDto.UserType == UserType.Individual)
-        {
-            return new IndividualUserUpdateDto
-                {
-                    Id = userDto.Id,
-                    FirstName = userDto.FirstName,
-                    LastName = userDto.LastName,
-                    Username = userDto.Username,
-                    Email = userDto.Email,
-                    PhoneNumber = userDto.PhoneNumber,
-                    LastLoginDate = userDto.LastLoginDate,
-                };
-        }
-        throw new InvalidOperationException("Invalid user type.");
+        return new UserUpdateDto
+            {
+                Id = loggedInUser.Id,
+                Username = loggedInUser.Username,
+                Email = loggedInUser.Email,
+                FirstName = loggedInUser.FirstName,
+                LastName = loggedInUser.LastName,
+                PhoneNumber = loggedInUser.PhoneNumber,
+                LastLoginDate = loggedInUser.LastLoginDate
+            };
     }
-
-    private CorporateUserUpdateDto ConvertToCorporateUserUpdateDto(UserDto userDto)
-    {
-        if (userDto.UserType == UserType.Corporate)
-        {
-            return new CorporateUserUpdateDto
-                {
-                    Id = userDto.Id,
-                    Username = userDto.Username,
-                    Email = userDto.Email,
-                    PhoneNumber = userDto.PhoneNumber,
-                    CompanyName = userDto.CompanyName,
-                    TaxNumber = userDto.TaxNumber,
-                    LastLoginDate = userDto.LastLoginDate,
-                };
-        }
-        throw new InvalidOperationException("Invalid user type.");
-    }
-
 } 
