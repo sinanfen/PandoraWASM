@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
 using PandoraWASM;
 using PandoraWASM.Services;
+using PandoraWASM.Services.Implementations;
+using PandoraWASM.Services.Interfaces;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -38,5 +40,7 @@ builder.Services.AddScoped<BaseAddressAuthorizationMessageHandler>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IPersonalVaultService, PersonalVaultService>();
+builder.Services.AddScoped<IPasswordVaultService, PasswordVaultService>();
 
 await builder.Build().RunAsync();
