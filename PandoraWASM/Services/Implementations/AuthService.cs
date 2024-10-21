@@ -2,7 +2,7 @@
 using Blazored.LocalStorage;
 using Pandora.Shared.DTOs.UserDTOs;
 using PandoraWASM.Responses;
-using PandoraWASM.Services;
+using PandoraWASM.Services.Interfaces;
 
 public class AuthService : IAuthService
 {

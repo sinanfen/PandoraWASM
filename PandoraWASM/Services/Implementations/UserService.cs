@@ -2,7 +2,7 @@
 using System.Net.Http.Json;
 using Blazored.LocalStorage;
 using Pandora.Shared.DTOs.UserDTOs;
-using PandoraWASM.Services;
+using PandoraWASM.Services.Interfaces;
 
 public class UserService : IUserService
 {

@@ -1,6 +1,6 @@
 ﻿using Pandora.Shared.DTOs.UserDTOs;
 
-namespace PandoraWASM.Services;
+namespace PandoraWASM.Services.Interfaces;
 
 public interface IAuthService
 {
