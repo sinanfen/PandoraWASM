@@ -1,14 +1,42 @@
-﻿@using Microsoft.AspNetCore.Components.Authorization
-@using Pandora.Shared.DTOs.CategoryDTOs
+﻿@using Pandora.Shared.DTOs.CategoryDTOs
 @using Pandora.Shared.DTOs.UserDTOs
-@using PandoraWASM.Services
+@using PandoraWASM.Services;
+@using PandoraWASM.Services.Implementations
+@using PandoraWASM.Services.Interfaces
 
 @inject ICategoryService CategoryService
-@inject IUserService UserService
 @inject NavigationManager NavigationManager
-@inject AuthenticationStateProvider LoginAuthenticationStateProvider
 
 @page "/categories"
+
+<style>
+    .category-card {
+        transition: all 0.3s ease-in-out;
+        border-radius: 10px;
+        background-color: @Colors.Lime.Lighten5;
+        color: @Colors.Shades.Black;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+    .category-card-header {
+        background-color: @Colors.Orange.Lighten4;
+        padding: 10px;
+        text-align: center;
+        border-bottom: 2px solid @Colors.Orange.Darken1;
+    }
+
+    .category-card-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 15px;
+    }
+</style>
 
 @if (categoryDtos == null)
 {
@@ -16,33 +44,55 @@
 }
 else
 {
-    foreach (var category in categoryDtos)
-    {
-        <MudCard>
-            <MudCardContent>
-                <MudText>@category.Name</MudText>
-                <MudText>@category.Description</MudText>
-            </MudCardContent>
-        </MudCard>
-    }
+    <MudGrid>
+        @foreach (var category in categoryDtos)
+        {
+            <MudItem xs="12" sm="6" md="4" lg="3">
+                <MudCard Class="category-card">
+                    <MudCardHeader Class="category-card-header">
+                        <MudText Typo="Typo.h6">@category.Name</MudText>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudText Typo="Typo.body2">@category.Description</MudText>
+                    </MudCardContent>
+                    <MudCardActions Class="category-card-actions">
+                        <MudButton Class="mr-2" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Lock" OnClick="@(() => GoToPasswordVaults(category.Id))">
+                            PasswordVaults
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Person" OnClick="@(() => GoToPersonalVaults(category.Id))">
+                            PersonalVaults
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
 }
 
 @code {
     private IList<CategoryDto> categoryDtos = new List<CategoryDto>();
-    private UserDto loggedInUser;
-    private Guid userId;
+
     protected async override Task OnInitializedAsync()
     {
         var cts = new CancellationTokenSource();
-        var authState = await LoginAuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        if (user == null || user.Identity == null || !user.Identity.IsAuthenticated)
-            NavigationManager.NavigateTo("/login", true);
+        try
+        {
+            categoryDtos = await CategoryService.GetCategories(cts.Token);
+        }
+        catch (Exception)
+        {
 
-        var userIdClaim = user.FindFirst("nameid")?.Value; // Use "nameid" as the claim type
-        Console.WriteLine("User ID: " + userIdClaim);
-        userId = Guid.Parse(userIdClaim);
-        loggedInUser = await UserService.GetUserAsync(userId, cts.Token);
-        categoryDtos = await CategoryService.GetCategories(loggedInUser.Id, cts.Token);
+            throw;
+        }
+    }
+
+    private void GoToPasswordVaults(Guid categoryId)
+    {
+        NavigationManager.NavigateTo($"/password-vaults?categoryId={categoryId}");
+    }
+
+    private void GoToPersonalVaults(Guid categoryId)
+    {
+        NavigationManager.NavigateTo($"/personal-vaults?categoryId={categoryId}");
     }
 }

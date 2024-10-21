@@ -1,12 +1,12 @@
 ﻿@page "/pages/authentication/register"
-
+@using Pandora.Shared.DTOs.UserDTOs
 
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
-@using Pandora.Shared.DTOs.UserDTOs
 @using PandoraWASM.Services
+@using PandoraWASM.Services.Interfaces
 @using PandoraWASM.Shared
 
 @layout LoginLayout

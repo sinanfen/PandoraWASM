@@ -1,0 +1,70 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Pandora.Shared.DTOs.PersonalVaultDTOs
+@using Pandora.Shared.DTOs.UserDTOs
+@using PandoraWASM.Services;
+@using PandoraWASM.Services.Implementations
+@using PandoraWASM.Services.Interfaces
+
+@inject IPersonalVaultService PersonalVaultService
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider LoginAuthenticationStateProvider
+
+@page "/personal-vaults"
+
+<style>
+    .personal-vault-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        border-radius: 12px;
+        background-image: linear-gradient(to bottom right, @Colors.Orange.Darken1, @Colors.Lime.Lighten2);
+        padding: 20px;
+        color: @Colors.Shades.White;
+    }
+
+        .personal-vault-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        }
+
+    .vault-card-footer {
+        text-align: right;
+        margin-top: 10px;
+    }
+</style>
+
+@if (personalVaultDtos == null)
+{
+    <p><em>Lütfen bekleyiniz</em></p>
+}
+else
+{
+    <MudGrid>
+        @foreach (var personalVault in personalVaultDtos)
+        {
+            <MudItem xs="12" sm="6" md="4" lg="3">
+                <MudCard Class="personal-vault-card">
+                    <MudCardHeader>
+                        <MudText Typo="Typo.h5" >@personalVault.SecureTitle</MudText>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudText Typo="Typo.body1">@personalVault.SecureContent</MudText>
+                        <MudText Typo="Typo.body2" Style="@($"color:{Colors.Lime.Accent3};")">Category: @personalVault.CategoryName</MudText>
+                    </MudCardContent>
+                    <MudCardActions Class="vault-card-footer">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error">View</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Dark">Edit</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private IList<PersonalVaultDto> personalVaultDtos = new List<PersonalVaultDto>();
+    protected async override Task OnInitializedAsync()
+    {
+        var cts = new CancellationTokenSource();
+        personalVaultDtos = await PersonalVaultService.GetPersonalVaults(cts.Token);
+    }
+}

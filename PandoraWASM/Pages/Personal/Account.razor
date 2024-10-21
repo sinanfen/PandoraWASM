@@ -1,11 +1,13 @@
 ﻿@page "/personal/account"
-
+@using Pandora.Shared.DTOs.UserDTOs
 @using System.Text.RegularExpressions
+
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components.Authorization
-@using Pandora.Shared.DTOs.UserDTOs
 @using System.Security.Claims
-@using PandoraWASM.Services
+@using PandoraWASM.Services;
+@using PandoraWASM.Services.Implementations
+@using PandoraWASM.Services.Interfaces
 
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager

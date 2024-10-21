@@ -1,10 +1,10 @@
 ﻿@page "/auth/login"
 
-
 @using Blazored.LocalStorage
 @using Microsoft.AspNetCore.Components.Authorization
 @using Pandora.Shared.DTOs.UserDTOs
 @using PandoraWASM.Services
+@using PandoraWASM.Services.Interfaces
 @using PandoraWASM.Shared
 @using System.Text.RegularExpressions
 
@@ -14,7 +14,6 @@
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
 @inject ILocalStorageService LocalStorageService
-
 
 <div class="d-flex justify-center">
     <MudImage Fluid ObjectFit="ObjectFit.Cover" Src="/img/pandora.jpg" Alt="PANDORA" Class="rounded-lg" />
