@@ -78,11 +78,10 @@
     private async Task HandleLogin()
     {
         var cts = new CancellationTokenSource(10_000);
-        var (success, message) = await AuthService.LoginAsync(userLoginDto, cts.Token);
+        var (success, message, token) = await AuthService.LoginAsync(userLoginDto, cts.Token);
 
-        if (success)
+        if (success && token != null)
         {
-            var token = await AuthService.GetTokenAsync();
             await LoginAuthenticationStateProvider.NotifyUserAuthentication(token);
             loginFailed = false;
             StateHasChanged();
@@ -94,6 +93,7 @@
             Snackbar.Add(message, Severity.Error);
         }
     }
+
 
     private bool IsValidEmail(string input)
     {

@@ -151,7 +151,7 @@
             {
                 Console.WriteLine("User ID: " + userIdClaim);
                 userId = Guid.Parse(userIdClaim);
-                loggedInUser = await UserService.GetUserAsync(userId, cts.Token);
+                loggedInUser = await UserService.GetAsync(userId, cts.Token);
             }
             else
                 Console.WriteLine("User ID claim not found.");

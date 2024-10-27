@@ -220,7 +220,7 @@ else
             {
                 Console.WriteLine("User ID: " + userIdClaim);
                 userId = Guid.Parse(userIdClaim);
-                loggedInUser = await UserService.GetUserAsync(userId, cts.Token);
+                loggedInUser = await UserService.GetAsync(userId, cts.Token);
 
                 if (loggedInUser != null)
                     userUpdateDto = ConvertToUserUpdateDto(loggedInUser);
@@ -373,7 +373,7 @@ else
                 return;
             }
             var cts = new CancellationTokenSource();
-            var result = await UserService.UpdateUserAsync(userUpdateDto, cts.Token);
+            var result = await UserService.UpdateAsync(userUpdateDto, cts.Token);
             HandleUpdateResult(result);
         }
         catch (Exception ex)
