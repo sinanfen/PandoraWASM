@@ -2,106 +2,59 @@
 using Blazored.LocalStorage;
 using Pandora.Shared.DTOs.UserDTOs;
 using PandoraWASM.Responses;
+using PandoraWASM.Services;
 using PandoraWASM.Services.Interfaces;
 
-public class AuthService : IAuthService
+public class AuthService : BaseHttpClientService, IAuthService
 {
-    private readonly HttpClient _httpClient;
-    private readonly ILocalStorageService _localStorage;
+    private readonly ILocalStorageService _localStorageService;
 
-    public AuthService(HttpClient httpClient, ILocalStorageService localStorage)
+    public AuthService(HttpClient httpClient, ILocalStorageService localStorageService)
+        : base(httpClient, localStorageService)
     {
-        _httpClient = httpClient;
-        _localStorage = localStorage;
+        _localStorageService = localStorageService;
     }
 
-    public async Task<(bool isSuccess, string message)> LoginAsync(UserLoginDto loginDto, CancellationToken cancellationToken)
+    public async Task<(bool isSuccess, string message, string token)> LoginAsync(UserLoginDto loginDto, CancellationToken cancellationToken)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/auth/login", loginDto, cancellationToken);
-        var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>(cancellationToken);
+        var response = await PostAsync("api/auth/login", loginDto, cancellationToken);
 
-        if (loginResponse != null)
+        if (response.IsSuccessStatusCode)
         {
-            if (loginResponse.Success)
+            var loginResponse = await response.Content.ReadFromJsonAsync<LoginResponse>(cancellationToken);
+            if (loginResponse != null && loginResponse.Success && !string.IsNullOrEmpty(loginResponse.Token))
             {
-                if (!string.IsNullOrEmpty(loginResponse.Token))
-                {
-                    await _localStorage.SetItemAsync("authToken", loginResponse.Token, cancellationToken);
-                }
-                return (true, loginResponse.Message ?? "Login successful!");
+                await _localStorageService.SetItemAsync("authToken", loginResponse.Token, cancellationToken);
+                return (true, loginResponse.Message ?? "Login successful!", loginResponse.Token);
             }
-            else
-            {
-                return (false, loginResponse.Message ?? "Login failed.");
-            }
+            return (false, loginResponse?.Message ?? "Login failed.", null);
         }
-        return (false, "An unexpected error occurred.");
+        return (false, $"Login request failed with status: {response.StatusCode}", null);
     }
 
 
     public async Task<(bool isSuccess, string message)> RegisterAsync(UserRegisterDto registerDto, CancellationToken cancellationToken)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/auth/register", registerDto, cancellationToken);
-        var registerResponse = await response.Content.ReadFromJsonAsync<RegisterResponse>(cancellationToken);
+        var response = await PostAsync("api/auth/register", registerDto, cancellationToken);
 
-        if (registerResponse != null)
+        if (response.IsSuccessStatusCode)
         {
-            if (registerResponse.Success)
-            {
-                return (true, registerResponse.Message ?? "Registration successful!");
-            }
-            else
-            {
-                return (false, registerResponse.Message ?? "Registration failed.");
-            }
+            var registerResponse = await response.Content.ReadFromJsonAsync<RegisterResponse>(cancellationToken);
+            return (registerResponse?.Success ?? false, registerResponse?.Message ?? "Registration successful!");
         }
-        return (false, "An unexpected error occurred.");
+        return (false, $"Registration request failed with status: {response.StatusCode}");
     }
 
     public async Task<string> ChangePasswordAsync(UserPasswordChangeDto changePasswordDto)
     {
-        var response = await _httpClient.PostAsJsonAsync("auth/change-password", changePasswordDto);
-        if (response.IsSuccessStatusCode)
-        {
-            var successMessage = await response.Content.ReadAsStringAsync();
-            return successMessage;
-        }
-        else
-        {
-            var errorMessage = await response.Content.ReadAsStringAsync();
-            return errorMessage;
-        }
+        var response = await PostAsync("auth/change-password", changePasswordDto, CancellationToken.None);
+        return await response.Content.ReadAsStringAsync();
     }
-
-    public async Task<string> GetTokenAsync()
-    {
-        try
-        {
-            return await _localStorage.GetItemAsync<string>("authToken");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error retrieving token: {ex.Message}");
-            return string.Empty;
-        }
-    }
-
 
     public async Task<UserDto> GetCurrentUserAsync()
     {
-        var token = await GetTokenAsync();
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            return null;
-        }
-
-        var response = await _httpClient.GetAsync("/api/users/userinfo");
-        if (response.IsSuccessStatusCode)
-        {
-            var userInfo = await response.Content.ReadFromJsonAsync<UserDto>();
-            return userInfo;
-        }
-
-        return null;
+        var cts = new CancellationTokenSource();
+        await SetAuthorizationHeader(cts.Token);
+        return await GetAsync<UserDto>("/api/users/userinfo", CancellationToken.None);
     }
 }

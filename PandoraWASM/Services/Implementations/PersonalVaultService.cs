@@ -1,57 +1,50 @@
 ﻿using Blazored.LocalStorage;
 using Pandora.Shared.DTOs.PersonalVaultDTOs;
 using PandoraWASM.Services.Interfaces;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
 
 namespace PandoraWASM.Services.Implementations;
 
-public class PersonalVaultService : IPersonalVaultService
+public class PersonalVaultService : BaseHttpClientService, IPersonalVaultService
 {
-    private readonly HttpClient _httpClient;
-    private readonly ILocalStorageService _localStorageService;
-
     public PersonalVaultService(HttpClient httpClient, ILocalStorageService localStorageService)
+        : base(httpClient, localStorageService)
     {
-        _httpClient = httpClient;
-        _localStorageService = localStorageService;
     }
 
-    public async Task<PersonalVaultDto> GetPersonalVault(Guid personalVaultId, CancellationToken cancellationToken)
+    public async Task<PersonalVaultDto?> GetPersonalVault(Guid personalVaultId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var token = await _localStorageService.GetItemAsync<string>("authToken", cancellationToken); // Fetch token from local storage
-            if (!string.IsNullOrEmpty(token))
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var response = await _httpClient.GetAsync($"api/personalVaults/{personalVaultId}", cancellationToken);
-            if (!response.IsSuccessStatusCode)
-                return null;
-            return await response.Content.ReadFromJsonAsync<PersonalVaultDto>();
-        }
-        catch (Exception)
-        {
-            throw;
-        }
+        return await GetAsync<PersonalVaultDto>($"api/personalVaults/{personalVaultId}", cancellationToken);
     }
 
-    public async Task<IList<PersonalVaultDto>> GetPersonalVaults(CancellationToken cancellationToken)
+    public async Task<IList<PersonalVaultDto>?> GetPersonalVaults(CancellationToken cancellationToken)
     {
-        try
-        {
-            var token = await _localStorageService.GetItemAsync<string>("authToken", cancellationToken); // Fetch token from local storage
-            if (!string.IsNullOrEmpty(token))
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await GetAsync<List<PersonalVaultDto>>("api/personalVaults", cancellationToken);
+    }
 
-            var response = await _httpClient.GetAsync($"api/personalVaults", cancellationToken);
-            if (!response.IsSuccessStatusCode)
-                return null;
-            return await response.Content.ReadFromJsonAsync<List<PersonalVaultDto>>();
-        }
-        catch (Exception)
-        {
-            throw;
-        }
+    public async Task<(bool Success, string? ErrorMessage)> AddPersonalVault(PersonalVaultAddDto personalVaultAddDto, CancellationToken cancellationToken)
+    {
+        var response = await PostAsync("api/personalVaults", personalVaultAddDto, cancellationToken);
+        return await ProcessHttpResponse(response);
+    }
+
+    public async Task<(bool Success, string? ErrorMessage)> UpdatePersonalVault(Guid personalVaultId, PersonalVaultUpdateDto personalVaultUpdateDto, CancellationToken cancellationToken)
+    {
+        var response = await PutAsync($"api/personalVaults/{personalVaultId}", personalVaultUpdateDto, cancellationToken);
+        return await ProcessHttpResponse(response);
+    }
+
+    public async Task<(bool Success, string? ErrorMessage)> DeletePersonalVault(Guid personalVaultId, CancellationToken cancellationToken)
+    {
+        var response = await DeleteAsync($"api/personalVaults/{personalVaultId}", cancellationToken);
+        return await ProcessHttpResponse(response);
+    }
+
+    private async Task<(bool Success, string? ErrorMessage)> ProcessHttpResponse(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode)
+            return (true, null);
+
+        var errorMessage = await response.Content.ReadAsStringAsync();
+        return (false, errorMessage);
     }
 }

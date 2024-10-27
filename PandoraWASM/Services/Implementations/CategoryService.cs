@@ -1,57 +1,53 @@
 ﻿using Blazored.LocalStorage;
 using Pandora.Shared.DTOs.CategoryDTOs;
 using PandoraWASM.Services.Interfaces;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
 
 namespace PandoraWASM.Services.Implementations;
 
-public class CategoryService : ICategoryService
+public class CategoryService : BaseHttpClientService, ICategoryService
 {
-    private readonly HttpClient _httpClient;
-    private readonly ILocalStorageService _localStorageService;
-
     public CategoryService(HttpClient httpClient, ILocalStorageService localStorageService)
+        : base(httpClient, localStorageService)
     {
-        _httpClient = httpClient;
-        _localStorageService = localStorageService;
     }
 
-    public async Task<IList<CategoryDto>> GetCategories(CancellationToken cancellationToken)
+    public async Task<IList<CategoryDto>?> GetCategories(CancellationToken cancellationToken)
     {
-        try
-        {
-            var token = await _localStorageService.GetItemAsync<string>("authToken", cancellationToken); // Fetch token from local storage
-            if (!string.IsNullOrEmpty(token))
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            var response = await _httpClient.GetAsync($"api/categories", cancellationToken);
-            if (!response.IsSuccessStatusCode)
-                return null;
-            return await response.Content.ReadFromJsonAsync<List<CategoryDto>>();
-        }
-        catch (Exception)
-        {
-            throw;
-        }
+        return await GetAsync<List<CategoryDto>>("api/categories", cancellationToken);
     }
 
-    public async Task<CategoryDto> GetCategory(Guid categoryId, CancellationToken cancellationToken)
+    public async Task<CategoryDto?> GetCategory(Guid categoryId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var token = await _localStorageService.GetItemAsync<string>("authToken", cancellationToken); // Fetch token from local storage
-            if (!string.IsNullOrEmpty(token))
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await GetAsync<CategoryDto>($"api/categories/{categoryId}", cancellationToken);
+    }
 
-            var response = await _httpClient.GetAsync($"api/categories/{categoryId}", cancellationToken);
-            if (!response.IsSuccessStatusCode)
-                return null;
-            return await response.Content.ReadFromJsonAsync<CategoryDto>();
-        }
-        catch (Exception ex)
+    public async Task<(bool Success, string? ErrorMessage)> AddCategory(CategoryAddDto categoryDto, CancellationToken cancellationToken)
+    {
+        var response = await PostAsync("api/categories", categoryDto, cancellationToken);
+        return await ProcessHttpResponse(response);
+    }
+
+    public async Task<(bool Success, string? ErrorMessage)> UpdateCategory(Guid categoryId, CategoryUpdateDto categoryDto, CancellationToken cancellationToken)
+    {
+        var response = await PutAsync($"api/categories/{categoryId}", categoryDto, cancellationToken);
+        return await ProcessHttpResponse(response);
+    }
+
+    public async Task<(bool Success, string? ErrorMessage)> DeleteCategory(Guid categoryId, CancellationToken cancellationToken)
+    {
+        var response = await DeleteAsync($"api/categories/{categoryId}", cancellationToken);
+        return await ProcessHttpResponse(response);
+    }
+
+    private async Task<(bool Success, string? ErrorMessage)> ProcessHttpResponse(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode)
         {
-            throw;
+            return (true, null);
         }
+
+        // Hata durumunda ayrıntılı hata mesajını döndür
+        var errorMessage = await response.Content.ReadAsStringAsync();
+        return (false, errorMessage);
     }
 }
