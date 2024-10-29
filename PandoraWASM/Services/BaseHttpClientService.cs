@@ -20,9 +20,7 @@ public class BaseHttpClientService
     {
         var token = await _localStorageService.GetItemAsync<string>("authToken", cancellationToken);
         if (!string.IsNullOrEmpty(token))
-        {
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        }
     }
 
     protected async Task<T?> GetAsync<T>(string url, CancellationToken cancellationToken)
@@ -30,9 +28,7 @@ public class BaseHttpClientService
         await SetAuthorizationHeader(cancellationToken);
         var response = await _httpClient.GetAsync(url, cancellationToken);
         if (response.IsSuccessStatusCode)
-        {
             return await response.Content.ReadFromJsonAsync<T>(cancellationToken: cancellationToken);
-        }
         return default;
     }
 

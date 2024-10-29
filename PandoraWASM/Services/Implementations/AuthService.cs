@@ -32,7 +32,6 @@ public class AuthService : BaseHttpClientService, IAuthService
         return (false, $"Login request failed with status: {response.StatusCode}", null);
     }
 
-
     public async Task<(bool isSuccess, string message)> RegisterAsync(UserRegisterDto registerDto, CancellationToken cancellationToken)
     {
         var response = await PostAsync("api/auth/register", registerDto, cancellationToken);

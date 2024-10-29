@@ -1,55 +1,72 @@
 ﻿@page "/auth/login"
 
 @using Blazored.LocalStorage
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @using Pandora.Shared.DTOs.UserDTOs
 @using PandoraWASM.Services
 @using PandoraWASM.Services.Interfaces
 @using PandoraWASM.Shared
-@using System.Text.RegularExpressions
 
-@layout LoginLayout
 @inject ISnackbar Snackbar
 @inject CustomAuthenticationStateProvider LoginAuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
 @inject ILocalStorageService LocalStorageService
+@layout LoginLayout
 
-<div class="d-flex justify-center">
-    <MudImage Fluid ObjectFit="ObjectFit.Cover" Src="/img/pandora.jpg" Alt="PANDORA" Class="rounded-lg" />
-</div>
-<MudText Align="Align.Center" Class="mt-2 mb-2" Typo="Typo.h4" GutterBottom="true">
-    Sign In
-</MudText>
+<MudPaper Elevation="5" Width="550px" Class="pa-6" Style="border-radius: 12px;">
+    <!-- Login and Register Links -->
+    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudText Typo="Typo.h4" GutterBottom>LOG IN</MudText>
+        <MudLink Href="/pages/authentication/register" Color="Color.Primary" Underline="Underline.Hover">
+            OR CREATE AN ACCOUNT
+        </MudLink>
+    </MudStack>
 
-@if (loginFailed)
-{
-    <MudAlert Severity="Severity.Error" Class="mt-8 mud-width-full" Style="max-width:500px;">
-        Incorrect username or password
-    </MudAlert>
-}
+    <!-- Error Alert -->
+    @if (loginFailed)
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">
+            Incorrect username or password
+        </MudAlert>
+    }
 
-<MudTextField T="string" @bind-Value="@userLoginDto.UsernameOrEmail" Label="Username Or Email" Variant="Variant.Outlined" Class="my-6"></MudTextField>
+    <!-- Email Address Field -->
+    <MudTextField T="string"
+                  @bind-Value="@userLoginDto.UsernameOrEmail"
+                  Label="Email address"
+                  Variant="Variant.Outlined"
+                  FullWidth="true"
+                  Required="true" />
 
-<MudTextField @bind-Value="@userLoginDto.Password"
-              Label="Password"
-              Variant="Variant.Outlined"
-              InputType="@PasswordInput"
-              Adornment="Adornment.End"
-              AdornmentIcon="@PasswordInputIcon"
-              OnAdornmentClick="TogglePasswordVisibility" />
+    <!-- Password Field -->
+    <MudTextField @bind-Value="@userLoginDto.Password"
+                  Label="Master Password"
+                  Variant="Variant.Outlined"
+                  InputType="@PasswordInput"
+                  Adornment="Adornment.End"
+                  AdornmentIcon="@PasswordInputIcon"
+                  OnAdornmentClick="TogglePasswordVisibility"
+                  FullWidth="true"
+                  Required="true"
+                  Class="mt-4" />
 
-<div class="d-flex justify-space-between align-center mt-4">
-    <MudText Typo="Typo.body2">Hesabınız yok mu?</MudText>
-    <MudLink Href="/pages/authentication/register" Class="ml-2" Style="font-weight:bold;">
-        Kayıt Ol
+    <!-- Login Button -->
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Warning"
+               FullWidth="true"
+               Class="mt-6"
+               Style="height: 48px; border-radius: 24px; font-weight: bold;"
+               OnClick="HandleLogin">
+        LOG IN
+    </MudButton>
+
+    <!-- Forgot Password Link -->
+    <MudLink Href="#" Class="d-block text-center mt-4" Color="Color.Primary" Underline="Underline.Hover">
+        FORGOT PASSWORD?
     </MudLink>
-</div>
-
-
-<MudButton Variant="Variant.Filled" Style="@($"background:{Colors.Amber.Darken3};  font-weight:bold;")" ButtonType="ButtonType.Submit" Size="Size.Large" FullWidth="true" OnClick="HandleLogin">
-    LOGIN
-</MudButton>
+</MudPaper>
 
 @code {
     bool PasswordVisibility;
@@ -58,18 +75,9 @@
 
     void TogglePasswordVisibility()
     {
-        @if (PasswordVisibility)
-        {
-            PasswordVisibility = false;
-            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
-            PasswordInput = InputType.Password;
-        }
-        else
-        {
-            PasswordVisibility = true;
-            PasswordInputIcon = Icons.Material.Filled.Visibility;
-            PasswordInput = InputType.Text;
-        }
+        PasswordVisibility = !PasswordVisibility;
+        PasswordInput = PasswordVisibility ? InputType.Text : InputType.Password;
+        PasswordInputIcon = PasswordVisibility ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff;
     }
 
     private UserLoginDto userLoginDto = new UserLoginDto();
@@ -77,38 +85,19 @@
 
     private async Task HandleLogin()
     {
-        var cts = new CancellationTokenSource(10_000);
+        var cts = new CancellationTokenSource();
         var (success, message, token) = await AuthService.LoginAsync(userLoginDto, cts.Token);
 
         if (success && token != null)
         {
             await LoginAuthenticationStateProvider.NotifyUserAuthentication(token);
             loginFailed = false;
-            StateHasChanged();
-            NavigationManager.NavigateTo("/home/dashboard", forceLoad: false);
+            NavigationManager.NavigateTo("/home/dashboard", forceLoad: true);
         }
         else
         {
             loginFailed = true;
             Snackbar.Add(message, Severity.Error);
         }
-    }
-
-
-    private bool IsValidEmail(string input)
-    {
-        var emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
-        return Regex.IsMatch(input, emailPattern);
-    }
-
-    public class LoginModel
-    {
-        public string Username { get; set; }
-        public string Password { get; set; }
-    }
-
-    void RedirectToHome()
-    {
-        NavigationManager.NavigateTo("/home/dashboard");
     }
 }

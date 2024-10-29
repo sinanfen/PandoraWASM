@@ -1,0 +1,26 @@
+﻿.login-layout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: #ffffff; /* Dark background similar to LastPass */
+    color: #ffffff;
+}
+
+.login-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 500px;
+    padding: 2rem;
+}
+
+.login-card-paper {
+    width: 100%;
+    padding: 2rem;
+    background-color: #ffffff; /* Slightly lighter dark for contrast */
+    border-radius: 8px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.5);
+    border: 2px solid #E63757; /* Red border similar to LastPass styling */
+}

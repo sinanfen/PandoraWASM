@@ -131,12 +131,10 @@ namespace PandoraWASM.Theme;
 //        ZIndex = new ZIndex();
 //    }
 //}
-
 public class PandoraAdminDashboard : MudTheme
 {
     public PandoraAdminDashboard()
     {
-
         SetTypography("Montserrat"); // Set default font
 
         // Light Mode Palette
@@ -154,7 +152,8 @@ public class PandoraAdminDashboard : MudTheme
             Success = Colors.Green.Accent3,
             Info = Colors.Teal.Accent3,
             Warning = Colors.Yellow.Darken3,
-            Error = Colors.Red.Darken2
+            Error = Colors.Red.Darken2,
+            TextPrimary = Colors.Shades.Black, // MudButton metin rengi açık tema için
         };
 
         // Dark Mode Palette
@@ -171,7 +170,8 @@ public class PandoraAdminDashboard : MudTheme
             Success = Colors.Green.Lighten3,
             Info = Colors.Teal.Lighten2,
             Warning = Colors.Yellow.Accent3,
-            Error = Colors.Red.Lighten1
+            Error = Colors.Red.Lighten1,
+            TextPrimary = Colors.Shades.White, // MudButton metin rengi koyu tema için
         };
 
         LayoutProperties = new LayoutProperties()
@@ -181,7 +181,6 @@ public class PandoraAdminDashboard : MudTheme
             DrawerWidthRight = "300px"
         };
 
-        // Typography settings to match the mystical feel of Pandora
         Typography = new Typography()
         {
             Default = new Default()
@@ -205,7 +204,6 @@ public class PandoraAdminDashboard : MudTheme
 
         Shadows = new Shadow();
         ZIndex = new ZIndex();
-
     }
 
     public void SetTypography(string fontFamily)

@@ -42,9 +42,7 @@ public class CategoryService : BaseHttpClientService, ICategoryService
     private async Task<(bool Success, string? ErrorMessage)> ProcessHttpResponse(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode)
-        {
             return (true, null);
-        }
 
         // Hata durumunda ayrıntılı hata mesajını döndür
         var errorMessage = await response.Content.ReadAsStringAsync();

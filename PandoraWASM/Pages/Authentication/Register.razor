@@ -11,32 +11,25 @@
 
 @layout LoginLayout
 
-@if (registerModel is null)
-{
-    <p>Lütfen bekleyin...</p>
-}
-else
-{
-    <MudPaper Class="pa-4" Elevation="0">
-        <MudText Typo="Typo.h4" GutterBottom="true">Sign Up</MudText>
-        <MudText>Already have an account? <MudLink Href="/auth/login">Sign In</MudLink></MudText>
+<MudPaper Elevation="5" Width="550" Class="pa-6" Style="border-radius: 12px;">
+    <MudText Typo="Typo.h4" GutterBottom="true">Sign Up</MudText>
+    <MudText>Already have an account? <MudLink Href="/auth/login">Sign In</MudLink></MudText>
 
-        <MudTextField T="string" @bind-Value="registerModel.Username" Label="Username" Variant="Variant.Outlined" Class="my-4" />
-        <MudTextField T="string" @bind-Value="registerModel.Email" Label="E-mail" Variant="Variant.Outlined" />
-        <MudTextField T="string" @bind-Value="registerModel.Password" Label="Password" Variant="Variant.Outlined" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="TogglePasswordVisibility" Class="mt-4" />
-        <MudTextField T="string" @bind-Value="registerModel.ConfirmPassword" Label="Confirm Password" Variant="Variant.Outlined" InputType="InputType.Password" Class="mt-4" />
-        <MudTextField T="string" @bind-Value="registerModel.PhoneNumber" Label="Phone Number" Variant="Variant.Outlined" Class="mt-4" />
-        <MudTextField T="string" @bind-Value="registerModel.FirstName" Label="First Name" Variant="Variant.Outlined" Class="mt-4" />
-        <MudTextField T="string" @bind-Value="registerModel.LastName" Label="Last Name" Variant="Variant.Outlined" Class="mt-4" />
+    <MudTextField T="string" @bind-Value="registerModel.Username" FullWidth Required Label="Username" Variant="Variant.Outlined" Class="my-4" />
+    <MudTextField T="string" @bind-Value="registerModel.Email" FullWidth Required Label="E-mail" Variant="Variant.Outlined" />
+    <MudTextField T="string" @bind-Value="registerModel.Password" FullWidth Required Label="Password" Variant="Variant.Outlined" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="TogglePasswordVisibility" Class="mt-4" />
+    <MudTextField T="string" @bind-Value="registerModel.ConfirmPassword" FullWidth Required Label="Confirm Password" Variant="Variant.Outlined" InputType="InputType.Password" Class="mt-4" />
+    <MudTextField T="string" @bind-Value="registerModel.PhoneNumber" FullWidth Label="Phone Number" Variant="Variant.Outlined" Class="mt-4" />
+    <MudTextField T="string" @bind-Value="registerModel.FirstName" FullWidth Required Label="First Name" Variant="Variant.Outlined" Class="mt-4" />
+    <MudTextField T="string" @bind-Value="registerModel.LastName" FullWidth Required Label="Last Name" Variant="Variant.Outlined" Class="mt-4" />
 
-        <MudStack Row AlignItems="AlignItems.Center" Class="my-3">
-            <MudSwitch T="bool" @bind-Checked="AgreeToTerms" @bind-Value="AgreeToTerms" Color="Color.Primary" Size="Size.Large" />
-            <MudText Class="ml-2">I agree to the terms and privacy</MudText>
-        </MudStack>
+    <MudStack Row AlignItems="AlignItems.Center" Class="my-3">
+        <MudSwitch T="bool" @bind-Checked="AgreeToTerms" @bind-Value="AgreeToTerms" Color="Color.Primary" Size="Size.Large" />
+        <MudText Class="ml-2">I agree to the terms and privacy</MudText>
+    </MudStack>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(AgreeToTerms==false)" Size="Size.Large" FullWidth="true" OnClick="RegisterAsync">Register</MudButton>
-    </MudPaper>
-}
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(AgreeToTerms==false)" Size="Size.Large" FullWidth="true" OnClick="RegisterAsync">Register</MudButton>
+</MudPaper>
 
 @code {
     private UserRegisterDto registerModel; // Can be CorporateUserRegisterDto or IndividualUserRegisterDto

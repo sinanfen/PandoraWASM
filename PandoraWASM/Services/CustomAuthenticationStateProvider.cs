@@ -33,7 +33,6 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            await _localStorage.SetItemAsync("authToken", token);
         }
         catch (Exception ex)
         {
