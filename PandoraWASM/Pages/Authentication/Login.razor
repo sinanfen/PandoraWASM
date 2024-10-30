@@ -17,9 +17,17 @@
 
 <MudPaper Elevation="5" Width="550px" Class="pa-6" Style="border-radius: 12px;">
     <!-- Login and Register Links -->
-    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
-        <MudText Typo="Typo.h4" GutterBottom>LOG IN</MudText>
-        <MudLink Href="/pages/authentication/register" Color="Color.Primary" Underline="Underline.Hover">
+    <div class="d-flex justify-center">
+        <MudImage Fluid ObjectFit="ObjectFit.Cover" Src="/img/pandora.jpg" Alt="PANDORA" Class="rounded-lg" />
+    </div>
+    <MudStack Row AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mt-4 mb-4">
+        <!-- LOG IN Text -->
+        <MudText Typo="Typo.h3" Style="font-family:'Cinzel Decorative', serif; font-weight:400; color: #3A2F2F; letter-spacing: 1px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);" GutterBottom>
+            LOGIN
+        </MudText>
+
+        <!-- OR CREATE AN ACCOUNT Link -->
+        <MudLink Href="/pages/authentication/register" Style="font-family:'Cormorant Garamond', serif; font-weight:bold; color: #8B5D33; text-decoration:none; letter-spacing: 1.1px;" Underline="Underline.Hover">
             OR CREATE AN ACCOUNT
         </MudLink>
     </MudStack>
@@ -28,7 +36,9 @@
     @if (loginFailed)
     {
         <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">
-            Incorrect username or password
+            <MudText Style="font-family:'Cormorant Garamond', serif; font-weight:500; color: #8B5D33; text-decoration:none; letter-spacing: 1.1px;">
+                Incorrect username or password
+            </MudText>
         </MudAlert>
     }
 
@@ -57,13 +67,16 @@
                Color="Color.Warning"
                FullWidth="true"
                Class="mt-6"
-               Style="height: 48px; border-radius: 24px; font-weight: bold;"
+               Style="height: 48px; border-radius: 24px; box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.2); font-weight: bold;"
                OnClick="HandleLogin">
-        LOG IN
+        <MudText Typo="Typo.h4"
+                 Style="font-family:'Times New Roman', serif; font-size: 1.3rem; font-weight: bold; color: #3A2F2F; letter-spacing: 0.5px; text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.25);">
+            LOGIN
+        </MudText>
     </MudButton>
 
     <!-- Forgot Password Link -->
-    <MudLink Href="#" Class="d-block text-center mt-4" Color="Color.Primary" Underline="Underline.Hover">
+    <MudLink Href="#" Class="d-block text-center mt-4" Style="font-family:'Cormorant Garamond', serif; font-weight:bold; color: #8B5D33; text-decoration:none; letter-spacing: 1.1px;" Color="Color.Primary" Underline="Underline.Hover">
         FORGOT PASSWORD?
     </MudLink>
 </MudPaper>
