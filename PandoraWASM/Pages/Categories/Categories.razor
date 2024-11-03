@@ -1,98 +1,113 @@
-﻿@using Pandora.Shared.DTOs.CategoryDTOs
-@using Pandora.Shared.DTOs.UserDTOs
-@using PandoraWASM.Services;
-@using PandoraWASM.Services.Implementations
+﻿@page "/categories"
+@using Pandora.Shared.DTOs.CategoryDTOs
 @using PandoraWASM.Services.Interfaces
 
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
 @inject ICategoryService CategoryService
 @inject NavigationManager NavigationManager
 
-@page "/categories"
+<PageTitle>Categories</PageTitle>
 
-<style>
-    .category-card {
-        transition: all 0.3s ease-in-out;
-        border-radius: 10px;
-        background-color: @Colors.Lime.Lighten5;
-        color: @Colors.Shades.Black;
-        padding: 20px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudStack Justify="Justify.Center" Class="my-4">
+        <MudText Typo="Typo.h4">All Categories</MudText>
+    </MudStack>
+
+    <MudItem md="12">
+        <MudCard Elevation="3" Class="border-solid border-2 mud-border-warning">
+            <MudCardContent>
+                <MudStack Justify="Justify.Center" AlignItems="AlignItems.End">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Dark"
+                               OnClick="AddNewCategory">Create New Category</MudButton>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    @if (categoryDtos == null)
+    {
+        <MudProgressLinear Color="MudBlazor.Color.Info" Indeterminate="true" Class="my-7" />
     }
-
-        .category-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        }
-
-    .category-card-header {
-        background-color: @Colors.Orange.Lighten4;
-        padding: 10px;
-        text-align: center;
-        border-bottom: 2px solid @Colors.Orange.Darken1;
+    else
+    {
+        <MudGrid Class="mt-2" Spacing="3">
+            @foreach (var category in categoryDtos)
+            {
+                <MudItem xs="6" sm="4" md="3">
+                    <MudCard Elevation="2">
+                        <MudCardContent>
+                            <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@Icons.Material.Rounded.Category" Size="Size.Large" />
+                                <MudText Typo="Typo.h6">@category.Name</MudText>
+                                <MudText Typo="Typo.caption">@category.Description</MudText>
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                               Color="Color.Primary"
+                                               Size="Size.Medium"
+                                               OnClick="@(() => OnEditCategoryClick(category))" />
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
     }
-
-    .category-card-actions {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 15px;
-    }
-</style>
-
-@if (categoryDtos == null)
-{
-    <p><em>Lütfen bekleyiniz</em></p>
-}
-else
-{
-    <MudGrid>
-        @foreach (var category in categoryDtos)
-        {
-            <MudItem xs="12" sm="6" md="4" lg="3">
-                <MudCard Class="category-card">
-                    <MudCardHeader Class="category-card-header">
-                        <MudText Typo="Typo.h6">@category.Name</MudText>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudText Typo="Typo.body2">@category.Description</MudText>
-                    </MudCardContent>
-                    <MudCardActions Class="category-card-actions">
-                        <MudButton Class="mr-2" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Lock" OnClick="@(() => GoToPasswordVaults(category.Id))">
-                            PasswordVaults
-                        </MudButton>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Person" OnClick="@(() => GoToPersonalVaults(category.Id))">
-                            PersonalVaults
-                        </MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </MudItem>
-        }
-    </MudGrid>
-}
+</MudContainer>
 
 @code {
     private IList<CategoryDto> categoryDtos = new List<CategoryDto>();
 
-    protected async override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
-        var cts = new CancellationTokenSource();
+        await GetCategoriesAsync();
+    }
+
+    private async Task GetCategoriesAsync()
+    {
         try
         {
+            var cts = new CancellationTokenSource();
             categoryDtos = await CategoryService.GetCategories(cts.Token);
         }
         catch (Exception)
         {
-
-            throw;
+            Snackbar.Add("An unexpected error has occured.", Severity.Error);
         }
     }
 
-    private void GoToPasswordVaults(Guid categoryId)
+    private void NavigateToCategory(Guid categoryId)
     {
-        NavigationManager.NavigateTo($"/password-vaults?categoryId={categoryId}");
+        NavigationManager.NavigateTo($"/categories/{categoryId}");
     }
 
-    private void GoToPersonalVaults(Guid categoryId)
+    private async Task AddNewCategory()
     {
-        NavigationManager.NavigateTo($"/personal-vaults?categoryId={categoryId}");
+        DialogOptions options = new() { FullWidth = true, CloseOnEscapeKey = true, CloseButton = true, MaxWidth = MaxWidth.Medium };
+        var dialog = await DialogService.ShowAsync<AddCategory>("Add New Category", options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            await GetCategoriesAsync();
+            StateHasChanged();
+        }
+    }
+
+    //Edit-Update
+    private async Task OnEditCategoryClick(CategoryDto categoryDto)
+    {
+        DialogParameters<EditCategory> parameters = new DialogParameters<EditCategory>
+        {
+            {x=>x.CategoryDto, categoryDto}
+        };
+        DialogOptions options = new() { FullWidth = true, CloseOnEscapeKey = true, CloseButton = true, MaxWidth = MaxWidth.Medium };
+        var dialog = await DialogService.ShowAsync<EditCategory>("Edit Category", parameters, options);
+        var result = await dialog.Result;
+        var isCancelled = result.Canceled;
+        if (!result.Canceled)
+        {
+            await GetCategoriesAsync();
+            StateHasChanged();
+        }
     }
 }

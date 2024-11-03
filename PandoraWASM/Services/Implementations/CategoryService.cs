@@ -27,9 +27,9 @@ public class CategoryService : BaseHttpClientService, ICategoryService
         return await ProcessHttpResponse(response);
     }
 
-    public async Task<(bool Success, string? ErrorMessage)> UpdateCategory(Guid categoryId, CategoryUpdateDto categoryDto, CancellationToken cancellationToken)
+    public async Task<(bool Success, string? ErrorMessage)> UpdateCategory(CategoryUpdateDto categoryDto, CancellationToken cancellationToken)
     {
-        var response = await PutAsync($"api/categories/{categoryId}", categoryDto, cancellationToken);
+        var response = await PutAsync($"api/categories/", categoryDto, cancellationToken);
         return await ProcessHttpResponse(response);
     }
 

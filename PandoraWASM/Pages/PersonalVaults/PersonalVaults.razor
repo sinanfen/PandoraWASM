@@ -5,6 +5,7 @@
 @using PandoraWASM.Services.Implementations
 @using PandoraWASM.Services.Interfaces
 
+@inject ISnackbar Snackbar
 @inject IPersonalVaultService PersonalVaultService
 @inject IUserService UserService
 @inject NavigationManager NavigationManager
@@ -34,7 +35,7 @@
 
 @if (personalVaultDtos == null)
 {
-    <p><em>Lütfen bekleyiniz</em></p>
+    <MudProgressLinear Color="MudBlazor.Color.Info" Indeterminate="true" Class="my-7" />
 }
 else
 {
@@ -64,7 +65,19 @@ else
     private IList<PersonalVaultDto> personalVaultDtos = new List<PersonalVaultDto>();
     protected async override Task OnInitializedAsync()
     {
-        var cts = new CancellationTokenSource();
-        personalVaultDtos = await PersonalVaultService.GetPersonalVaults(cts.Token);
+        await GetPersonalVaultsAsync();
+    }
+
+    private async Task GetPersonalVaultsAsync()
+    {
+        try
+        {
+            var cts = new CancellationTokenSource();
+            personalVaultDtos = await PersonalVaultService.GetPersonalVaults(cts.Token);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("An unexpected error has occured.", Severity.Error);
+        }
     }
 }

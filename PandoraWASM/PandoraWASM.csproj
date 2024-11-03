@@ -25,6 +25,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Update="Pages\Categories\AddCategory.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
     <Content Update="Pages\PasswordVaults\AddPasswordVault.razor">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>

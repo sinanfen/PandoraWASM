@@ -1,0 +1,79 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Pandora.Shared.DTOs.CategoryDTOs
+@using PandoraWASM.Services.Interfaces
+
+@inject ICategoryService CategoryService
+@inject IUserService UserService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider LoginAuthenticationStateProvider
+
+<MudCard>
+    <MudForm Model="@model" @ref="@form">
+        <MudCardContent>
+            <MudGrid>
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="model.Name"
+                                  Variant="Variant.Outlined"
+                                  For="@(() => model.Name)"
+                                  Required
+                                  Immediate="true"
+                                  Label="Category Name" />
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="model.Description"
+                                  For="@(() => model.Description)"
+                                  Variant="Variant.Outlined"
+                                  Immediate="true"
+                                  T="string"
+                                  Lines="3"
+                                  Label="Description" />
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+    </MudForm>
+    <MudCardActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(()=> Submit())">
+            Kaydet
+        </MudButton>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Parameter] public CategoryDto CategoryDto { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    private MudForm form;
+
+    private CategoryUpdateDto model = new();
+    private IList<CategoryDto> categoryDtos = new List<CategoryDto>();
+
+    protected override void OnInitialized()
+    {
+        model.Id = CategoryDto.Id;
+        model.UserId = CategoryDto.UserId;
+        model.Name = CategoryDto.Name;
+        model.Description = CategoryDto.Description;
+    }
+
+    private async Task Submit()
+    {
+        await form.Validate();
+        if (!form.IsValid)
+        {
+            Snackbar.Add("Please fill in the required fields on the form.", MudBlazor.Severity.Error);
+            return;
+        }      
+        var response = await CategoryService.UpdateCategory(model, default);
+        if (!response.Success)
+        {
+            Snackbar.Add($"{response.ErrorMessage}", Severity.Error);
+            MudDialog.Close(DialogResult.Cancel());
+        }
+        else
+        {
+            Snackbar.Add("The category has been updated successfully.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok("The category has been updated successfully."));
+        }
+    }
+}

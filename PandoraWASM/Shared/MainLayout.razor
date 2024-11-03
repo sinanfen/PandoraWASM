@@ -113,18 +113,18 @@
 
 @code {
     private ThemeManagerTheme _themeManager = new ThemeManagerTheme
-        {
-            Theme = new PandoraAdminDashboard(),
-            DrawerClipMode = DrawerClipMode.Always,
-            DefaultBorderRadius = 5,
-            AppBarElevation = 2,
-            DrawerElevation = 5,
-            DefaultElevation = 5
-        };
+    {
+        Theme = new PandoraAdminDashboard(),
+        DrawerClipMode = DrawerClipMode.Always,
+        DefaultBorderRadius = 5,
+        AppBarElevation = 2,
+        DrawerElevation = 5,
+        DefaultElevation = 5
+    };
 
     public bool _drawerOpen = true;
     public bool _themeManagerOpen = false;
-    private bool _isDarkMode = false;
+    private bool _isDarkMode = true;
     private MudTheme _theme = new();
 
     public string FirstName { get; set; }
@@ -139,7 +139,6 @@
     protected override async Task OnInitializedAsync()
     {
         var cts = new CancellationTokenSource();
-        _isDarkMode = await _localStorageService.GetItemAsync<bool>("isDarkMode", default);
         var authState = await LoginAuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
@@ -168,12 +167,12 @@
         }
     }
 
-    void DrawerToggle()
+    private void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
     }
 
-    void OpenThemeManager(bool value)
+    private void OpenThemeManager(bool value)
     {
         _themeManagerOpen = value;
     }
@@ -184,7 +183,7 @@
         await _localStorageService.SetItemAsync<bool>("isDarkMode", _isDarkMode, default);
     }
 
-    void UpdateTheme(ThemeManagerTheme value)
+    private void UpdateTheme(ThemeManagerTheme value)
     {
         _themeManager = value;
         StateHasChanged();
@@ -206,5 +205,4 @@
         await LoginAuthenticationStateProvider.NotifyUserLogout();
         _navigationManager.NavigateTo("/auth/login", true);
     }
-
 }

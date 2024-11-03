@@ -1,0 +1,178 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Pandora.Shared.DTOs.CategoryDTOs
+@using Pandora.Shared.DTOs.PersonalVaultDTOs
+@using PandoraWASM.Services.Interfaces
+
+@inject IPersonalVaultService PersonalVaultService
+@inject ICategoryService CategoryService
+@inject IUserService UserService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider LoginAuthenticationStateProvider
+
+<MudCard>
+    <MudForm Model="@model" @ref="@form">
+        <MudCardContent>
+            <MudGrid Spacing="3">
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="model.Title"
+                                  Variant="Variant.Outlined"
+                                  Label="Title"
+                                  Required
+                                  Immediate="true" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="model.Url"
+                                  Variant="Variant.Outlined"
+                                  Label="URL"
+                                  Immediate="true" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="model.MediaFile"
+                                  Variant="Variant.Outlined"
+                                  Label="Media File"
+                                  Immediate="true" />
+                </MudItem>
+
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="model.Summary"
+                                  Variant="Variant.Outlined"
+                                  Label="Summary"
+                                  Immediate="true"
+                                  T="string"
+                                  Lines="3" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="model.Content"
+                                  Variant="Variant.Outlined"
+                                  Label="Content"
+                                  Immediate="true"
+                                  T="string"
+                                  Lines="5" />
+                </MudItem>
+
+                <MudItem xs="12" md="12">
+                    <MudSelect Required
+                               Variant="Variant.Outlined"
+                               T="Guid?"
+                               Label="Select Category"
+                               @bind-Value="model.CategoryId"
+                               ToStringFunc="@(id => GetCategoryTitle(id))">
+                        <MudSelectItem T="Guid" Value="Guid.Empty" Disabled>Select a category</MudSelectItem>
+                        @foreach (var categoryDto in categoryDtos)
+                        {
+                            <MudSelectItem T="Guid" Value="@(categoryDto.Id)">@categoryDto.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudDatePicker @bind-Value="model.ExpirationDate"
+                                   Label="Expiration Date"
+                                   Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudText Typo="Typo.subtitle1">Tags</MudText>
+                    <MudTextField Label="Add Tag" Variant="Variant.Outlined" @bind-Value="newTag" Immediate="true" OnKeyDown="AddTagOnEnter" />
+                    <MudChipSet T="string" @bind-SelectedItems="model.Tags">
+                        @foreach (var tag in model.Tags)
+                        {
+                            <MudChip Color="Color.Primary" @onclick="(() => RemoveTag(tag))">@tag</MudChip>
+                        }
+                    </MudChipSet>
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudSwitch T="bool" @bind-Checked="@model.IsFavorite" Label="Favorite" />
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+    </MudForm>
+    <MudCardActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(()=> Submit())">
+            Kaydet
+        </MudButton>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Parameter] public PersonalVaultDto PersonalVaultDto { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    private MudForm form;
+
+    private PersonalVaultUpdateDto model = new();
+    private IList<CategoryDto> categoryDtos = new List<CategoryDto>();
+    private string newTag = string.Empty;
+
+    protected async override Task OnInitializedAsync()
+    {
+        try
+        {
+            var cts = new CancellationTokenSource();
+            categoryDtos = await CategoryService.GetCategories(cts.Token);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("An unexpected error has occured.", Severity.Error);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        model.Title = PersonalVaultDto.SecureTitle;
+        model.Url= PersonalVaultDto.SecureUrl;
+        model.MediaFile= PersonalVaultDto.SecureMediaFile;
+        model.Summary= PersonalVaultDto.SecureSummary;
+        model.Content= PersonalVaultDto.SecureContent;
+        model.UserId = PersonalVaultDto.UserId;
+        model.CategoryId = PersonalVaultDto.CategoryId;
+        model.Id = PersonalVaultDto.Id;
+    }
+
+    private void AddTagOnEnter(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(newTag))
+        {
+            if (!model.Tags.Contains(newTag))
+                model.Tags.Add(newTag);
+            newTag = string.Empty;
+        }
+    }
+
+    private void RemoveTag(string tag)
+    {
+        model.Tags.Remove(tag);
+    }
+
+    private async Task Submit()
+    {
+        await form.Validate();
+        if (!form.IsValid)
+        {
+            Snackbar.Add("Please fill in the required fields on the form.", MudBlazor.Severity.Error);
+            return;
+        }
+        var response = await PersonalVaultService.UpdatePersonalVault(model, default);
+        if (!response.Success)
+        {
+            Snackbar.Add($"An error has occured", Severity.Error);
+            MudDialog.Close(DialogResult.Cancel());
+        }
+        else
+        {
+            Snackbar.Add("The password vault has been updated successfully.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok("The password vault has been updated successfully."));
+        }
+    }
+
+    private string GetCategoryTitle(Guid? id)
+    {
+        if (id == Guid.Empty) return "Not selected";
+        return categoryDtos.FirstOrDefault(c => c.Id == id)?.Name ?? "Not selected";
+    }
+}

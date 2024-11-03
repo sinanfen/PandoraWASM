@@ -27,9 +27,9 @@ public class PersonalVaultService : BaseHttpClientService, IPersonalVaultService
         return await ProcessHttpResponse(response);
     }
 
-    public async Task<(bool Success, string? ErrorMessage)> UpdatePersonalVault(Guid personalVaultId, PersonalVaultUpdateDto personalVaultUpdateDto, CancellationToken cancellationToken)
+    public async Task<(bool Success, string? ErrorMessage)> UpdatePersonalVault(PersonalVaultUpdateDto personalVaultUpdateDto, CancellationToken cancellationToken)
     {
-        var response = await PutAsync($"api/personalVaults/{personalVaultId}", personalVaultUpdateDto, cancellationToken);
+        var response = await PutAsync($"api/personalVaults/", personalVaultUpdateDto, cancellationToken);
         return await ProcessHttpResponse(response);
     }
 
