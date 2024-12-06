@@ -1,5 +1,4 @@
-﻿@page "/add-personal-vault"
-@using Microsoft.AspNetCore.Components.Authorization
+﻿@using Microsoft.AspNetCore.Components.Authorization
 @using Pandora.Shared.DTOs.CategoryDTOs
 @using Pandora.Shared.DTOs.PersonalVaultDTOs
 @using PandoraWASM.Services.Interfaces
@@ -70,19 +69,31 @@
                     </MudSelect>
                 </MudItem>
 
-                <MudItem xs="12" md="6">
-                    <MudDatePicker @bind-Value="model.ExpirationDate"
-                                   Label="Expiration Date"
-                                   Variant="Variant.Outlined" />
+                <MudItem>
+                    <MudSwitch T="bool" @bind-Checked="@lockThis" Label="Lock This" />
                 </MudItem>
+
+                @if (lockThis)
+                {
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.subtitle1">Expiration Date</MudText>
+                        <MudDatePicker @bind-Value="model.ExpirationDate"
+                                       Label="Expiration Date"
+                                       Required="@(lockThis)"
+                                       Variant="Variant.Outlined" />
+                    </MudItem>
+                }
 
                 <MudItem xs="12" md="6">
                     <MudText Typo="Typo.subtitle1">Tags</MudText>
                     <MudTextField Label="Add Tag" Variant="Variant.Outlined" @bind-Value="newTag" Immediate="true" OnKeyDown="AddTagOnEnter" />
                     <MudChipSet T="string" @bind-SelectedItems="model.Tags">
-                        @foreach (var tag in model.Tags)
+                        @if (model.Tags != null)
                         {
-                            <MudChip Color="Color.Primary" @onclick="(() => RemoveTag(tag))">@tag</MudChip>
+                            @foreach (var tag in model.Tags)
+                            {
+                                <MudChip Color="Color.Primary" @onclick="(() => RemoveTag(tag))">@tag</MudChip>
+                            }
                         }
                     </MudChipSet>
                 </MudItem>
@@ -110,9 +121,12 @@
     private Guid userId;
     private string newTag = string.Empty;
 
+    private bool lockThis = false;
+
     protected override async Task OnInitializedAsync()
     {
         categoryDtos = await CategoryService.GetCategories(CancellationToken.None) ?? new List<CategoryDto>();
+        model.Tags = new List<string>();
         await GetCurrentUserAsync();
     }
 

@@ -1,6 +1,7 @@
-﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Pandora.Shared.DTOs.PersonalVaultDTOs
 @using Pandora.Shared.DTOs.UserDTOs
+@using PandoraWASM.CustomComponents
 @using PandoraWASM.Services;
 @using PandoraWASM.Services.Implementations
 @using PandoraWASM.Services.Interfaces
@@ -10,60 +11,72 @@
 @inject IUserService UserService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider LoginAuthenticationStateProvider
+@inject IDialogService DialogService
 
 @page "/personal-vaults"
 
-<style>
-    .personal-vault-card {
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        border-radius: 12px;
-        background-image: linear-gradient(to bottom right, @Colors.Orange.Darken1, @Colors.Lime.Lighten2);
-        padding: 20px;
-        color: @Colors.Shades.White;
-    }
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-8" Color="Color.Primary">Personal Vaults</MudText>
 
-        .personal-vault-card:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-        }
+    <MudGrid Spacing="4">
+        <MudItem xs="12">
+            <MudPaper Class="d-flex justify-end pa-4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="@(async () => await DialogService.ShowAsync<AddPersonalVault>("Add New Personal Vault"))">
+                    New Vault
+                </MudButton>
+            </MudPaper>
+        </MudItem>
 
-    .vault-card-footer {
-        text-align: right;
-        margin-top: 10px;
-    }
-</style>
-
-@if (personalVaultDtos == null)
-{
-    <MudProgressLinear Color="MudBlazor.Color.Info" Indeterminate="true" Class="my-7" />
-}
-else
-{
-    <MudGrid>
-        @foreach (var personalVault in personalVaultDtos)
+        @if (personalVaultDtos == null)
         {
-            <MudItem xs="12" sm="6" md="4" lg="3">
-                <MudCard Class="personal-vault-card">
-                    <MudCardHeader>
-                        <MudText Typo="Typo.h5" >@personalVault.SecureTitle</MudText>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudText Typo="Typo.body1">@personalVault.SecureContent</MudText>
-                        <MudText Typo="Typo.body2" Style="@($"color:{Colors.Lime.Accent3};")">Category: @personalVault.CategoryName</MudText>
-                    </MudCardContent>
-                    <MudCardActions Class="vault-card-footer">
-                        <MudButton Variant="Variant.Outlined" Color="Color.Error">View</MudButton>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Dark">Edit</MudButton>
-                    </MudCardActions>
-                </MudCard>
+            <MudItem xs="12">
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
             </MudItem>
         }
+        else
+        {
+            @foreach (var vault in personalVaultDtos)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard Elevation="3" Class="rounded-lg vault-card"
+                             Style="position: relative; overflow: hidden; background: linear-gradient(135deg, var(--mud-palette-primary-lighten-1) 0%, var(--mud-palette-primary-darken-1) 100%);">
+                        <div class="animated-border"></div>
+                        <MudCardHeader Style="color: var(--mud-palette-text-primary)">
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6" Style="text-shadow: 1px 1px 2px rgba(0,0,0,0.2)">
+                                    @vault.SecureTitle
+                                </MudText>
+                                <MudChip Size="Size.Small" Color="Color.Surface" T="string" Class="mt-2"
+                                         Style="background-color: rgba(255,255,255,0.2)">
+                                    @vault.CategoryName
+                                </MudChip>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-primary)">
+                                @vault.SecureSummary
+                            </MudText>
+                        </MudCardContent>
+                        <MudCardActions Class="d-flex justify-end" Style="background-color: rgba(0,0,0,0.1)">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Surface" Size="Size.Small"
+                                           Title="Edit" Class="hover-effect" OnClick="@(() => OnEditVaultClick(vault))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Surface" Size="Size.Small"
+                                           Title="View" Class="hover-effect" OnClick="@(() => NavigateToVault(vault.Id))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                           Title="Delete" Class="hover-effect" OnClick="@(() => DeleteVault(vault.Id))" />
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        }
     </MudGrid>
-}
+</MudContainer>
 
 @code {
     private IList<PersonalVaultDto> personalVaultDtos = new List<PersonalVaultDto>();
-    protected async override Task OnInitializedAsync()
+
+    protected override async Task OnInitializedAsync()
     {
         await GetPersonalVaultsAsync();
     }
@@ -77,7 +90,66 @@ else
         }
         catch (Exception)
         {
-            Snackbar.Add("An unexpected error has occured.", Severity.Error);
+            Snackbar.Add("An unexpected error has occurred.", Severity.Error);
+        }
+    }
+
+    private void NavigateToVault(Guid vaultId)
+    {
+        NavigationManager.NavigateTo($"/personal-vaults/{vaultId}");
+    }
+
+    private async Task OnEditVaultClick(PersonalVaultDto vaultDto)
+    {
+        DialogParameters<EditPersonalVault> parameters = new DialogParameters<EditPersonalVault>
+{
+{ x => x.PersonalVaultDto, vaultDto }
+};
+
+        var options = new DialogOptions
+            {
+                FullWidth = true,
+                CloseOnEscapeKey = true,
+                CloseButton = true,
+                MaxWidth =
+                MaxWidth.Medium
+            };
+        var dialog = await DialogService.ShowAsync<EditPersonalVault>("Edit Vault", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await GetPersonalVaultsAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteVault(Guid vaultId)
+    {
+        var parameters = new DialogParameters
+        {
+        { "ContentText", "Are you sure you want to delete this vault? This action cannot be undone." },
+        { "ButtonText", "Delete" },
+        { "Color", Color.Error }
+        };
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+        var dialog = await DialogService.ShowAsync<DialogTemplate_Dialog>("Delete Vault", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                var cts = new CancellationTokenSource();
+                await PersonalVaultService.DeletePersonalVault(vaultId, cts.Token);
+                await GetPersonalVaultsAsync();
+                Snackbar.Add("Vault deleted successfully", Severity.Success);
+            }
+            catch (Exception)
+            {
+                Snackbar.Add("Failed to delete vault", Severity.Error);
+            }
         }
     }
 }

@@ -1,0 +1,39 @@
+@using MudBlazor;
+
+<MudDialog>
+    <DialogContent>
+        <MudText>@ContentText</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Vazgeç</MudButton>
+        <MudButton Color="@Color" Variant="Variant.Filled" OnClick="Approve">@ButtonText</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public string ContentText { get; set; }
+
+    [Parameter]
+    public string ButtonText { get; set; }
+
+    [Parameter]
+    public Color Color { get; set; }
+
+    [Parameter]
+    public EventCallback ApproveClick { get; set; }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Approve()
+    {
+        if (ApproveClick.HasDelegate)
+        {
+            await ApproveClick.InvokeAsync(null);
+        }
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}
